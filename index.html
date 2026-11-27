@@ -37,7 +37,7 @@ scene.add(new THREE.AmbientLight(0xffffff,0.7));
 const sun = new THREE.DirectionalLight(0xffffff,0.9);
 sun.position.set(50,80,30); scene.add(sun);
 
-// ---------- CITY MODELS (simple but cooler) ----------
+// ---------- CITY MODELS ----------
 const matBuilding = new THREE.MeshLambertMaterial({color:0x334455});
 const matRoof   = new THREE.MeshLambertMaterial({color:0x112233});
 
@@ -61,45 +61,31 @@ for(let x=-60;x<=60;x+=18){
   }
 }
 
-// ---------- MECHA MODEL (anime style) ----------
+// ---------- MECHA MODEL ----------
 const mecha = new THREE.Group();
-
-// torso
 const torso = new THREE.Mesh(new THREE.BoxGeometry(3.2,5.5,2.5), new THREE.MeshLambertMaterial({color:0xff2255}));
 mecha.add(torso);
-
-// head
 const head = new THREE.Mesh(new THREE.BoxGeometry(2.4,2.4,2.4), new THREE.MeshLambertMaterial({color:0x222222}));
 head.position.y = 4.5; mecha.add(head);
-
-// shoulders
 const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(1.8,1.2,2.8), new THREE.MeshLambertMaterial({color:0x444444}));
 shoulderL.position.set(-2.8,2.5,0); mecha.add(shoulderL);
 const shoulderR = shoulderL.clone(); shoulderR.position.x = 2.8; mecha.add(shoulderR);
-
-// arms
 const armL = new THREE.Mesh(new THREE.BoxGeometry(1.4,5,1.4), new THREE.MeshLambertMaterial({color:0xff4488}));
 armL.position.set(-3.5,-1,0); mecha.add(armL);
 const armR = armL.clone(); armR.position.x = 3.5; mecha.add(armR);
-
-// legs
 const legL = new THREE.Mesh(new THREE.BoxGeometry(1.6,4.5,1.8), new THREE.MeshLambertMaterial({color:0x333333}));
 legL.position.set(-1.2,-5,0); mecha.add(legL);
 const legR = legL.clone(); legR.position.x = 1.2; mecha.add(legR);
-
 scene.add(mecha);
 camera.position.set(0,18,-22);
 
 // ---------- WANTED SYSTEM ----------
 let stars = 0;
 const wantedEl = document.getElementById('wanted');
-function setStars(n){
-  stars = Math.max(0, Math.min(5, n));
-  wantedEl.innerHTML = '★'.repeat(stars) + '☆'.repeat(5-stars);
-}
+function setStars(n){ stars = Math.max(0, Math.min(5, n)); wantedEl.innerHTML = '★'.repeat(stars) + '☆'.repeat(5-stars); }
 function addHeat(v){ setStars(stars+v); setTimeout(()=>setStars(stars-1),7000); }
 
-// ---------- MOBILE JOYSTICK ----------
+// ---------- MOBILE JOYSTICK (FIXED DIRECTION) ----------
 const joy = document.getElementById('joystick');
 let joyActive = false, joyStart = {x:0,y:0}, joyVec = {x:0,y:0};
 
@@ -116,7 +102,7 @@ joy.addEventListener('touchmove', e=>{
 });
 joy.addEventListener('touchend', ()=>{joyActive=false; joyVec={x:0,y:0};});
 
-// ---------- PUNCH BUTTON ----------
+// ---------- PUNCH + DESTRUCTION ----------
 const punchBtn = document.getElementById('punch');
 punchBtn.addEventListener('touchstart', ()=>{
   // punch animation
@@ -124,9 +110,22 @@ punchBtn.addEventListener('touchstart', ()=>{
   mecha.position.z -= 3;
   setTimeout(()=>mecha.position.z = origZ, 120);
 
-  // hit buildings
-  scene.children.forEach(obj=>{
+  // destroy nearby buildings + create rubble
+  scene.children.slice().forEach(obj=>{
     if(obj.geometry && obj.position.distanceTo(mecha.position)<14){
+      // rubble
+      for(let i=0;i<4;i++){
+        const rubble = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2,1.2,1.2),
+          new THREE.MeshLambertMaterial({color:0x666666})
+        );
+        rubble.position.copy(obj.position);
+        rubble.position.x += (Math.random()-0.5)*4;
+        rubble.position.y += Math.random()*3;
+        rubble.position.z += (Math.random()-0.5)*4;
+        scene.add(rubble);
+        setTimeout(()=>scene.remove(rubble), 4000);
+      }
       scene.remove(obj);
       addHeat(1);
     }
@@ -136,9 +135,7 @@ punchBtn.addEventListener('touchstart', ()=>{
 // ---------- TOUCH LOOK ----------
 let lastTouchX = 0;
 let yaw = 0, pitch = 0.4;
-document.addEventListener('touchstart', e=>{
-  lastTouchX = e.touches[0].clientX;
-});
+document.addEventListener('touchstart', e=>{ lastTouchX = e.touches[0].clientX; });
 document.addEventListener('touchmove', e=>{
   const dx = e.touches[0].clientX - lastTouchX;
   yaw -= dx * 0.006;
@@ -151,11 +148,11 @@ function animate(){
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
 
-  // movement from joystick
+  // movement from joystick (CORRECTED)
   const speed = 22;
   if(joyActive){
     mecha.position.x += Math.sin(yaw) * joyVec.x * speed * dt;
-    mecha.position.z += Math.cos(yaw) * joyVec.y * speed * dt;
+    mecha.position.z -= Math.cos(yaw) * joyVec.y * speed * dt;   // forward = up on joystick
   }
 
   mecha.rotation.y = yaw;
