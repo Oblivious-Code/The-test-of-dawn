@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MECHA CITY – Mobile Sandbox</title>
+<title>MECHA CITY v3 – Mobile Sandbox</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
   body{margin:0;overflow:hidden;font-family:sans-serif;background:#000}
@@ -17,152 +17,147 @@
 <canvas id="c"></canvas>
 <div id="hud">
   <div id="wanted">★☆☆☆☆</div>
-  <div id="info">Drag joystick • Tap PUNCH</div>
+  <div id="info">Joystick • PUNCH</div>
 </div>
-
 <div id="joystick"></div>
 <div id="punch">PUNCH</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ---------- THREE SETUP ----------
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 500);
-const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'), antialias:true, alpha:true});
-renderer.setSize(innerWidth, innerHeight);
-window.onresize = () => { camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); };
+// ---------- SETUP ----------
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,600);
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+window.onresize=()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);};
 
-// Light
-scene.add(new THREE.AmbientLight(0xffffff,0.7));
-const sun = new THREE.DirectionalLight(0xffffff,0.9);
-sun.position.set(50,80,30); scene.add(sun);
+scene.add(new THREE.AmbientLight(0xffffff,0.75));
+const sun=new THREE.DirectionalLight(0xffffff,0.9);sun.position.set(60,90,40);scene.add(sun);
 
-// ---------- CITY MODELS ----------
-const matBuilding = new THREE.MeshLambertMaterial({color:0x334455});
-const matRoof   = new THREE.MeshLambertMaterial({color:0x112233});
+// ---------- MATERIALS ----------
+const matMecha=new THREE.MeshLambertMaterial({color:0xff2255});
+const matPolice=new THREE.MeshLambertMaterial({color:0x1122aa});
+const matCar=new THREE.MeshLambertMaterial({color:0x333333});
+const matHuman=new THREE.MeshLambertMaterial({color:0xffcc99});
+const matBuilding=new THREE.MeshLambertMaterial({color:0x445566});
+const matRoof=new THREE.MeshLambertMaterial({color:0x112233});
 
-function createBuilding(w,h,d){
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), matBuilding);
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(w*1.05,1,d*1.05), matRoof);
-  roof.position.y = h/2 + 0.5;
-  g.add(body, roof);
+// ---------- CITY ----------
+function makeBuilding(w,h,d){
+  const g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matBuilding));
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(w*1.05,1,d*1.05),matRoof);
+  roof.position.y=h/2+0.5;g.add(roof);
   return g;
 }
-
-for(let x=-60;x<=60;x+=18){
-  for(let z=-60;z<=60;z+=18){
-    if(Math.random()<0.65){
-      const h = 12 + Math.random()*30;
-      const b = createBuilding(9,h,9);
-      b.position.set(x, h/2, z);
-      scene.add(b);
-    }
-  }
+for(let x=-70;x<=70;x+=20)for(let z=-70;z<=70;z+=20)if(Math.random()<0.7){
+  const h=15+Math.random()*28;
+  const b=makeBuilding(10,h,10);
+  b.position.set(x,h/2,z);scene.add(b);
 }
 
-// ---------- MECHA MODEL ----------
-const mecha = new THREE.Group();
-const torso = new THREE.Mesh(new THREE.BoxGeometry(3.2,5.5,2.5), new THREE.MeshLambertMaterial({color:0xff2255}));
-mecha.add(torso);
-const head = new THREE.Mesh(new THREE.BoxGeometry(2.4,2.4,2.4), new THREE.MeshLambertMaterial({color:0x222222}));
-head.position.y = 4.5; mecha.add(head);
-const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(1.8,1.2,2.8), new THREE.MeshLambertMaterial({color:0x444444}));
-shoulderL.position.set(-2.8,2.5,0); mecha.add(shoulderL);
-const shoulderR = shoulderL.clone(); shoulderR.position.x = 2.8; mecha.add(shoulderR);
-const armL = new THREE.Mesh(new THREE.BoxGeometry(1.4,5,1.4), new THREE.MeshLambertMaterial({color:0xff4488}));
-armL.position.set(-3.5,-1,0); mecha.add(armL);
-const armR = armL.clone(); armR.position.x = 3.5; mecha.add(armR);
-const legL = new THREE.Mesh(new THREE.BoxGeometry(1.6,4.5,1.8), new THREE.MeshLambertMaterial({color:0x333333}));
-legL.position.set(-1.2,-5,0); mecha.add(legL);
-const legR = legL.clone(); legR.position.x = 1.2; mecha.add(legR);
+// ---------- MECHA (detailed) ----------
+const mecha=new THREE.Group();
+// torso
+mecha.add(new THREE.Mesh(new THREE.BoxGeometry(3.5,6,2.8),matMecha));
+// head
+const head=new THREE.Mesh(new THREE.BoxGeometry(2.6,2.6,2.6),new THREE.MeshLambertMaterial({color:0x222222}));
+head.position.y=5;mecha.add(head);
+// arms
+const armL=new THREE.Mesh(new THREE.BoxGeometry(1.5,5.5,1.5),matMecha);
+armL.position.set(-3.8,0,0);mecha.add(armL);
+const armR=armL.clone();armR.position.x=3.8;mecha.add(armR);
+// legs
+const legL=new THREE.Mesh(new THREE.BoxGeometry(1.8,5,2),new THREE.MeshLambertMaterial({color:0x333333}));
+legL.position.set(-1.4,-6,0);mecha.add(legL);
+const legR=legL.clone();legR.position.x=1.4;mecha.add(legR);
 scene.add(mecha);
 camera.position.set(0,18,-22);
 
+// ---------- POLICE CARS ----------
+const policeCars=[];
+function spawnPolice(x,z){
+  const car=new THREE.Group();
+  car.add(new THREE.Mesh(new THREE.BoxGeometry(4,2,7),matPolice));
+  car.add(new THREE.Mesh(new THREE.BoxGeometry(3,1.5,3),new THREE.MeshLambertMaterial({color:0x88aaff})));
+  car.position.set(x,1,z);
+  scene.add(car);
+  policeCars.push(car);
+}
+for(let i=0;i<8;i++)spawnPolice(-50+Math.random()*100,-50+Math.random()*100);
+
+// ---------- PEOPLE ----------
+const people=[];
+function spawnPerson(x,z){
+  const p=new THREE.Group();
+  p.add(new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,1.6,8),matHuman)); // body
+  const headP=new THREE.Mesh(new THREE.SphereGeometry(0.5,8,8),matHuman);
+  headP.position.y=1.3;p.add(headP);
+  p.position.set(x,0.8,z);
+  scene.add(p);
+  people.push(p);
+}
+for(let i=0;i<20;i++)spawnPerson(-60+Math.random()*120,-60+Math.random()*120);
+
 // ---------- WANTED SYSTEM ----------
-let stars = 0;
-const wantedEl = document.getElementById('wanted');
-function setStars(n){ stars = Math.max(0, Math.min(5, n)); wantedEl.innerHTML = '★'.repeat(stars) + '☆'.repeat(5-stars); }
-function addHeat(v){ setStars(stars+v); setTimeout(()=>setStars(stars-1),7000); }
+let stars=0;
+const wantedEl=document.getElementById('wanted');
+function setStars(n){stars=Math.max(0,Math.min(5,n));wantedEl.innerHTML='★'.repeat(stars)+'☆'.repeat(5-stars);}
+function addHeat(v){setStars(stars+v);setTimeout(()=>setStars(stars-1),6000);}
 
-// ---------- MOBILE JOYSTICK (FIXED DIRECTION) ----------
-const joy = document.getElementById('joystick');
-let joyActive = false, joyStart = {x:0,y:0}, joyVec = {x:0,y:0};
-
-joy.addEventListener('touchstart', e=>{
-  joyActive = true;
-  const t = e.touches[0];
-  joyStart = {x:t.clientX, y:t.clientY};
-});
-joy.addEventListener('touchmove', e=>{
-  if(!joyActive) return;
-  const t = e.touches[0];
-  joyVec.x = (t.clientX - joyStart.x) / 60;
-  joyVec.y = (t.clientY - joyStart.y) / 60;
-});
-joy.addEventListener('touchend', ()=>{joyActive=false; joyVec={x:0,y:0};});
+// ---------- JOYSTICK ----------
+const joy=document.getElementById('joystick');
+let joyActive=false,joyStart={x:0,y:0},joyVec={x:0,y:0};
+joy.addEventListener('touchstart',e=>{joyActive=true;const t=e.touches[0];joyStart={x:t.clientX,y:t.clientY};});
+joy.addEventListener('touchmove',e=>{if(!joyActive)return;const t=e.touches[0];joyVec.x=(t.clientX-joyStart.x)/60;joyVec.y=(t.clientY-joyStart.y)/60;});
+joy.addEventListener('touchend',()=>{joyActive=false;joyVec={x:0,y:0};});
 
 // ---------- PUNCH + DESTRUCTION ----------
-const punchBtn = document.getElementById('punch');
-punchBtn.addEventListener('touchstart', ()=>{
+const punchBtn=document.getElementById('punch');
+punchBtn.addEventListener('touchstart',()=>{
   // punch animation
-  const origZ = mecha.position.z;
-  mecha.position.z -= 3;
-  setTimeout(()=>mecha.position.z = origZ, 120);
+  const oZ=mecha.position.z;
+  mecha.position.z-=3;setTimeout(()=>mecha.position.z=oZ,130);
 
-  // destroy nearby buildings + create rubble
+  // destroy buildings + spawn rubble
   scene.children.slice().forEach(obj=>{
-    if(obj.geometry && obj.position.distanceTo(mecha.position)<14){
-      // rubble
-      for(let i=0;i<4;i++){
-        const rubble = new THREE.Mesh(
-          new THREE.BoxGeometry(1.2,1.2,1.2),
-          new THREE.MeshLambertMaterial({color:0x666666})
-        );
-        rubble.position.copy(obj.position);
-        rubble.position.x += (Math.random()-0.5)*4;
-        rubble.position.y += Math.random()*3;
-        rubble.position.z += (Math.random()-0.5)*4;
-        scene.add(rubble);
-        setTimeout(()=>scene.remove(rubble), 4000);
+    if(obj.geometry&&obj.position.distanceTo(mecha.position)<15){
+      for(let i=0;i<5;i++){
+        const r=new THREE.Mesh(new THREE.BoxGeometry(1.3,1.3,1.3),new THREE.MeshLambertMaterial({color:0x666666}));
+        r.position.copy(obj.position);
+        r.position.x+=(Math.random()-0.5)*5;r.position.y+=Math.random()*4;r.position.z+=(Math.random()-0.5)*5;
+        scene.add(r);setTimeout(()=>scene.remove(r),4500);
       }
-      scene.remove(obj);
-      addHeat(1);
+      scene.remove(obj);addHeat(1);
     }
   });
 });
 
 // ---------- TOUCH LOOK ----------
-let lastTouchX = 0;
-let yaw = 0, pitch = 0.4;
-document.addEventListener('touchstart', e=>{ lastTouchX = e.touches[0].clientX; });
-document.addEventListener('touchmove', e=>{
-  const dx = e.touches[0].clientX - lastTouchX;
-  yaw -= dx * 0.006;
-  lastTouchX = e.touches[0].clientX;
-});
+let lastX=0,yaw=0;
+document.addEventListener('touchstart',e=>lastX=e.touches[0].clientX);
+document.addEventListener('touchmove',e=>{yaw-=(e.touches[0].clientX-lastX)*0.006;lastX=e.touches[0].clientX;});
 
 // ---------- GAME LOOP ----------
-const clock = new THREE.Clock();
+const clock=new THREE.Clock();
 function animate(){
   requestAnimationFrame(animate);
-  const dt = clock.getDelta();
+  const dt=clock.getDelta();
 
-  // movement from joystick (CORRECTED)
-  const speed = 22;
+  // movement
+  const spd=24;
   if(joyActive){
-    mecha.position.x += Math.sin(yaw) * joyVec.x * speed * dt;
-    mecha.position.z -= Math.cos(yaw) * joyVec.y * speed * dt;   // forward = up on joystick
+    mecha.position.x+=Math.sin(yaw)*joyVec.x*spd*dt;
+    mecha.position.z-=Math.cos(yaw)*joyVec.y*spd*dt;
   }
+  mecha.rotation.y=yaw;
 
-  mecha.rotation.y = yaw;
+  // camera
+  const off=new THREE.Vector3(0,16,-21).applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
+  camera.position.lerp(mecha.position.clone().add(off),0.12);
+  camera.lookAt(mecha.position.x,mecha.position.y+7,mecha.position.z);
 
-  // camera follow
-  const camOff = new THREE.Vector3(0,15,-20).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
-  camera.position.lerp(mecha.position.clone().add(camOff), 0.15);
-  camera.lookAt(mecha.position.x, mecha.position.y+7, mecha.position.z);
-
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 animate();
 </script>
