@@ -1,1 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GRAND MECHA AUTO VI: NEO-TOKYO MOBILE</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Noto+Sans+JP:wght@700;900&display=swap');
 
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #070510;
+      color: #fff;
+      font-family: 'Chakra Petch', 'Noto Sans JP', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Mobile Phone Bezel Wrapper for Desktop Viewing */
+    #phone-frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 460px;
+      max-height: 920px;
+      background: #0b0718;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(255, 0, 128, 0.35), 0 0 120px rgba(0, 240, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+    }
+
+    @media (min-width: 500px) {
+      #phone-frame {
+        height: 94vh;
+        border-radius: 34px;
+        border: 4px solid #231b3d;
+      }
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Bootleg Splash Screen */
+    #splash-screen {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 25%, #3a0d4e 0%, #0d061f 65%, #05020c 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 28px 20px;
+      z-index: 30;
+      text-align: center;
+    }
+
+    .bootleg-badge {
+      background: linear-gradient(90deg, #ff007f, #ffae00);
+      color: #000;
+      font-weight: 900;
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px rgba(255, 0, 127, 0.7);
+    }
+
+    .title-lockup {
+      margin-top: 8px;
+    }
+
+    .title-jp {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 15px;
+      color: #00f0ff;
+      letter-spacing: 4px;
+      text-shadow: 0 0 10px #00f0ff;
+    }
+
+    .title-main {
+      font-size: 40px;
+      line-height: 0.92;
+      font-weight: 700;
+      font-style: italic;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ffffff 15%, #ff6ec7 55%, #ff007f 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 0 #260038);
+      margin: 6px 0;
+    }
+
+    .title-vi {
+      font-size: 56px;
+      font-weight: 900;
+      font-style: italic;
+      line-height: 0.85;
+      background: linear-gradient(135deg, #ffe600 0%, #ff5e00 50%, #ff0080 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 18px rgba(255, 94, 0, 0.6));
+    }
+
+    .sub-edition {
+      font-size: 13px;
+      color: #ffd6f6;
+      letter-spacing: 2px;
+      margin-top: 6px;
+    }
+
+    .mech-selector {
+      width: 100%;
+      background: rgba(14, 10, 32, 0.85);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 16px;
+      padding: 12px;
+      backdrop-filter: blur(8px);
+    }
+
+    .mech-selector-label {
+      font-size: 11px;
+      color: #00f0ff;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .mech-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .mech-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 8px 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .mech-card.active {
+      border-color: #ff007f;
+      background: rgba(255, 0, 127, 0.22);
+      box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .mech-card .code {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .mech-card .role {
+      font-size: 10px;
+      color: #a9b4d0;
+      margin-top: 2px;
+    }
+
+    #start-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(90deg, #ff007f, #ff6a00);
+      color: #fff;
+      font-family: inherit;
+      font-size: 20px;
+      font-weight: 700;
+      font-style: italic;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      box-shadow: 0 6px 25px rgba(255, 0, 127, 0.6);
+      text-transform: uppercase;
+    }
+
+    #start-btn:active {
+      transform: scale(0.97);
+    }
+
+    .fake-store-note {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    /* GTA Classic Top-Right HUD */
+    #hud {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      display: none;
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 14px 14px 0;
+    }
+
+    /* Circular Neo-Tokyo Radar */
+    .radar-wrap {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      border: 3px solid #1e2436;
+      background: radial-gradient(circle, rgba(12, 34, 48, 0.9) 0%, rgba(7, 15, 26, 0.95) 100%);
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.5), 0 4px 12px rgba(0, 0, 0, 0.7);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #radar-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* GTA Money, Stars, Health/Armor Bars */
+    .gta-stats {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .wanted-stars {
+      font-size: 18px;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 4px #000;
+    }
+
+    .star-on {
+      color: #ffe600;
+      filter: drop-shadow(0 0 6px #ff9900);
+    }
+
+    .star-off {
+      color: rgba(255, 255, 255, 0.22);
+    }
+
+    .money-display {
+      font-size: 22px;
+      font-weight: 700;
+      color: #52ff7f;
+      text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
+      letter-spacing: 0.5px;
+    }
+
+    .bars-row {
+      display: flex;
+      gap: 6px;
+      width: 138px;
+    }
+
+    .bar-bg {
+      flex: 1;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1.5px solid #000;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    #hp-fill {
+      width: 100%;
+      height: 100%;
+      background: #4cd964;
+      transition: width 0.1s;
+    }
+
+    #boost-fill {
+      width: 100%;
+      height: 100%;
+      background: #00d2ff;
+      transition: width 0.08s;
+    }
+
+    .radio-banner {
+      margin-top: 4px;
+      background: rgba(0, 0, 0, 0.65);
+      border-right: 3px solid #ff007f;
+      padding: 2px 8px;
+      font-size: 10px;
+      color: #ff9ce3;
+      letter-spacing: 0.8px;
+    }
+
+    /* Mission / Wanted Toast */
+    #event-banner {
+      position: absolute;
+      top: 106px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 6, 24, 0.82);
+      border: 1px solid rgba(255, 0, 127, 0.6);
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffe600;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    /* Mobile Touch Controls */
+    .touch-controls {
+      position: absolute;
+      bottom: 18px;
+      left: 0;
+      right: 0;
+      padding: 0 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      pointer-events: auto;
+    }
+
+    .joystick-zone {
+      width: 118px;
+      height: 118px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.07);
+      border: 2px solid rgba(0, 240, 255, 0.35);
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #joystick-knob {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #00f0ff, #0066ff);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
+      position: absolute;
+      transform: translate(0px, 0px);
+    }
+
+    .action-cluster {
+      display: grid;
+      grid-template-columns: repeat(2, 62px);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .action-btn {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      color: #fff;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+    }
+
+    .action-btn:active {
+      transform: scale(0.91);
+    }
+
+    #btn-fire {
+      background: radial-gradient(circle, #ff2a6d, #990033);
+      border-color: #ff7aa2;
+      grid-column: 2;
+      width: 72px;
+      height: 72px;
+      font-size: 13px;
+    }
+
+    #btn-boost {
+      background: radial-gradient(circle, #00d2ff, #0051a8);
+      border-color: #8ceaff;
+    }
+
+    #btn-swap {
+      background: radial-gradient(circle, #ffae00, #995200);
+      border-color: #ffe082;
+      font-size: 10px;
+    }
+
+    /* Wasted Overlay */
+    #wasted-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 0, 8, 0.78);
+      backdrop-filter: blur(4px);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 25;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .wasted-jp {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 62px;
+      font-weight: 900;
+      color: #ff1e56;
+      text-shadow: 0 0 25px #ff0044, 4px 4px 0 #000;
+      letter-spacing: 6px;
+    }
+
+    .wasted-en {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 4px;
+      margin-bottom: 14px;
+    }
+
+    #final-score {
+      color: #52ff7f;
+      font-size: 18px;
+      margin-bottom: 22px;
+    }
+
+    #retry-btn {
+      padding: 14px 32px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(90deg, #00f0ff, #ff007f);
+      color: #fff;
+      font-family: inherit;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="phone-frame">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Bootleg Mobile Splash Screen -->
+    <div id="splash-screen">
+      <div class="bootleg-badge">★ MOBILE POCKET EDITION • 100% REAL ★</div>
+
+      <div class="title-lockup">
+        <div class="title-jp">グランド・メカ・オート</div>
+        <div class="title-main">GRAND MECHA<br>AUTO</div>
+        <div class="title-vi">VI</div>
+        <div class="sub-edition">NEO-SHINJUKU YAKUZA OVERDRIVE</div>
+      </div>
+
+      <div class="mech-selector">
+        <div class="mech-selector-label">Select Stolen Mecha Frame</div>
+        <div class="mech-cards">
+          <div class="mech-card active" data-mech="0">
+            <div class="code">RX-06 RONIN</div>
+            <div class="role">Pulse + Dash</div>
+          </div>
+          <div class="mech-card" data-mech="1">
+            <div class="code">MZ-99 KAIJU</div>
+            <div class="role">Heavy Plasma</div>
+          </div>
+          <div class="mech-card" data-mech="2">
+            <div class="code">AE-86 DRIFT</div>
+            <div class="role">Turbo Railgun</div>
+          </div>
+        </div>
+      </div>
+
+      <button id="start-btn">JACK MECHA &amp; START</button>
+      <div class="fake-store-note">Touch Left Stick to Steer • Right Buttons to Blast &amp; Boost (Arrow Keys / Space / Shift supported)</div>
+    </div>
+
+    <!-- In-Game HUD -->
+    <div id="hud">
+      <div class="hud-top">
+        <div class="radar-wrap">
+          <canvas id="radar-canvas" width="80" height="80"></canvas>
+        </div>
+        <div class="gta-stats">
+          <div class="wanted-stars" id="stars-box">
+            <span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span>
+          </div>
+          <div class="money-display" id="yen-box">¥000,000</div>
+          <div class="bars-row">
+            <div class="bar-bg"><div id="hp-fill"></div></div>
+            <div class="bar-bg"><div id="boost-fill"></div></div>
+          </div>
+          <div class="radio-banner" id="radio-station">📻 SHIBUYA SYNTH FM 88.6</div>
+        </div>
+      </div>
+
+      <div id="event-banner">WANTED LEVEL UP: JSDF DRONES DEPLOYED!</div>
+
+      <div class="touch-controls">
+        <div class="joystick-zone" id="joystick-zone">
+          <div id="joystick-knob"></div>
+        </div>
+        <div class="action-cluster">
+          <button class="action-btn" id="btn-swap">MECHA<br>SWAP</button>
+          <button class="action-btn" id="btn-boost">JET<br>BOOST</button>
+          <button class="action-btn" id="btn-fire">FIRE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wasted Screen -->
+    <div id="wasted-screen">
+      <div class="wasted-jp">大破</div>
+      <div class="wasted-en">MECHA WASTED</div>
+      <div id="final-score">YAKUZA BOUNTY: ¥0</div>
+      <button id="retry-btn">STEAL ANOTHER MECHA</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const radarCanvas = document.getElementById('radar-canvas');
+    const rCtx = radarCanvas.getContext('2d');
+
+    const frame = document.getElementById('phone-frame');
+    let W = canvas.width = frame.clientWidth;
+    let H = canvas.height = frame.clientHeight;
+
+    window.addEventListener('resize', () => {
+      W = canvas.width = frame.clientWidth;
+      H = canvas.height = frame.clientHeight;
+    });
+
+    // Mecha Presets
+    const MECHAS = [
+      {
+        name: 'RX-06 RONIN',
+        primary: '#ff007f',
+        secondary: '#00f0ff',
+        accent: '#ffe600',
+        speed: 1.05,
+        fireRate: 140,
+        bulletColor: '#00f0ff',
+        bulletSize: 6,
+        damage: 25
+      },
+      {
+        name: 'MZ-99 KAIJU',
+        primary: '#ff5e00',
+        secondary: '#ffe600',
+        accent: '#ffffff',
+        speed: 0.85,
+        fireRate: 230,
+        bulletColor: '#ffae00',
+        bulletSize: 10,
+        damage: 50
+      },
+      {
+        name: 'AE-86 DRIFT',
+        primary: '#f4f4f8',
+        secondary: '#181824',
+        accent: '#ff1e56',
+        speed: 1.28,
+        fireRate: 110,
+        bulletColor: '#ff1e56',
+        bulletSize: 5,
+        damage: 20
+      }
+    ];
+
+    const RADIO_STATIONS = [
+      '📻 SHIBUYA SYNTH FM 88.6',
+      '📻 AKIHABARA EUROBEAT 104.2',
+      '📻 NEO-OSAKA DRILL RADIO',
+      '📻 JSDF EMERGENCY BAND'
+    ];
+
+    // Game State
+    let selectedMech = 0;
+    let gameRunning = false;
+    let yen = 0;
+    let wanted = 0;
+    let hp = 100;
+    let boost = 100;
+    let isBoosting = false;
+    let isFiring = false;
+    let lastShot = 0;
+    let roadOffset = 0;
+    let cameraShake = 0;
+    let frameCount = 0;
+
+    // Player 3rd-person normalized road coordinates: x in [-1, 1], z = 0 (near camera)
+    const player = {
+      x: 0,
+      vx: 0,
+      stride: 0,
+      tilt: 0
+    };
+
+    let entities = []; // Traffic, Yakuza Mechs, JSDF Drones, Yen Pickups
+    let bullets = [];
+    let particles = [];
+    let buildings = [];
+
+    // Generate Neo-Shinjuku Skyline Buildings
+    function initBuildings() {
+      buildings = [];
+      const kanjiSigns = ['新宿', 'ヤクザ', 'メカVI', 'ラーメン', '電脳', '極道', '東京'];
+      for (let i = 0; i < 18; i++) {
+        const side = i % 2 === 0 ? -1 : 1;
+        buildings.push({
+          side,
+          z: (i / 18),
+          width: 0.35 + Math.random() * 0.25,
+          height: 0.45 + Math.random() * 0.55,
+          color: side === -1 ? '#170d36' : '#12183b',
+          neon: ['#ff007f', '#00f0ff', '#ffe600', '#9d4edd'][i % 4],
+          kanji: kanjiSigns[i % kanjiSigns.length]
+        });
+      }
+    }
+
+    // Perspective projection helper: z in [0 (camera), 1 (horizon)]
+    function project(roadX, z) {
+      const horizonY = H * 0.37;
+      const groundH = H - horizonY;
+      // Non-linear perspective curve for dramatic 3rd-person depth
+      const persp = Math.pow(1 - z, 1.65);
+      const y = horizonY + persp * groundH;
+      const roadHalfWidth = W * (0.07 + persp * 0.48);
+      const x = W * 0.5 + roadX * roadHalfWidth;
+      const scale = 0.14 + persp * 1.15;
+      return { x, y, scale, roadHalfWidth };
+    }
+
+    function showBanner(text) {
+      const el = document.getElementById('event-banner');
+      el.textContent = text;
+      el.style.opacity = '1';
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => {
+        el.style.opacity = '0';
+      }, 2200);
+    }
+
+    function updateHUD() {
+      document.getElementById('yen-box').textContent = '¥' + yen.toLocaleString();
+      const starsEl = document.getElementById('stars-box');
+      let html = '';
+      for (let i = 1; i <= 5; i++) {
+        html += `<span class="${i <= wanted ? 'star-on' : 'star-off'}">★</span>`;
+      }
+      starsEl.innerHTML = html;
+      document.getElementById('hp-fill').style.width = Math.max(0, hp) + '%';
+      document.getElementById('hp-fill').style.background = hp > 35 ? '#4cd964' : '#ff2a6d';
+      document.getElementById('boost-fill').style.width = Math.max(0, boost) + '%';
+    }
+
+    // UI Selection Logic
+    document.querySelectorAll('.mech-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.mech-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        selectedMech = parseInt(card.dataset.mech, 10);
+      });
+    });
+
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('retry-btn').addEventListener('click', startGame);
+
+    function startGame() {
+      document.getElementById('splash-screen').style.display = 'none';
+      document.getElementById('wasted-screen').style.display = 'none';
+      document.getElementById('hud').style.display = 'block';
+
+      yen = 0;
+      wanted = 1;
+      hp = 100;
+      boost = 100;
+      player.x = 0;
+      player.vx = 0;
+      entities = [];
+      bullets = [];
+      particles = [];
+      initBuildings();
+      updateHUD();
+      showBanner('MISSION: WRECK NEO-SHINJUKU TRAFFIC!');
+      gameRunning = true;
+    }
+
+    // Touch Joystick Logic
+    const joyZone = document.getElementById('joystick-zone');
+    const joyKnob = document.getElementById('joystick-knob');
+    let joyActive = false;
+    let joyInputX = 0;
+    let joyInputY = 0;
+
+    function handleJoystick(clientX, clientY) {
+      const rect = joyZone.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const maxR = rect.width * 0.36;
+      let dx = clientX - cx;
+      let dy = clientY - cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist > maxR) {
+        dx = (dx / dist) * maxR;
+        dy = (dy / dist) * maxR;
+      }
+      joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+      joyInputX = dx / maxR;
+      joyInputY = dy / maxR;
+    }
+
+    joyZone.addEventListener('touchstart', e => {
+      e.preventDefault();
+      joyActive = true;
+      handleJoystick(e.touches[0].clientX, e.touches[0].clientY);
+    });
+    joyZone.addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (joyActive) handleJoystick(e.touches[0].clientX, e.touches[0].clientY);
+    });
+    const resetJoy = () => {
+      joyActive = false;
+      joyInputX = 0;
+      joyInputY = 0;
+      joyKnob.style.transform = 'translate(0px, 0px)';
+    };
+    joyZone.addEventListener('touchend', resetJoy);
+    joyZone.addEventListener('touchcancel', resetJoy);
+
+    // Mouse support for desktop testing of joystick
+    joyZone.addEventListener('mousedown', e => {
+      joyActive = true;
+      handleJoystick(e.clientX, e.clientY);
+    });
+    window.addEventListener('mousemove', e => {
+      if (joyActive) handleJoystick(e.clientX, e.clientY);
+    });
+    window.addEventListener('mouseup', resetJoy);
+
+    // Action Buttons
+    const btnFire = document.getElementById('btn-fire');
+    const btnBoost = document.getElementById('btn-boost');
+    const btnSwap = document.getElementById('btn-swap');
+
+    btnFire.addEventListener('touchstart', e => { e.preventDefault(); isFiring = true; });
+    btnFire.addEventListener('touchend', () => { isFiring = false; });
+    btnFire.addEventListener('mousedown', () => { isFiring = true; });
+    btnFire.addEventListener('mouseup', () => { isFiring = false; });
+
+    btnBoost.addEventListener('touchstart', e => { e.preventDefault(); isBoosting = true; });
+    btnBoost.addEventListener('touchend', () => { isBoosting = false; });
+    btnBoost.addEventListener('mousedown', () => { isBoosting = true; });
+    btnBoost.addEventListener('mouseup', () => { isBoosting = false; });
+
+    btnSwap.addEventListener('click', () => {
+      selectedMech = (selectedMech + 1) % MECHAS.length;
+      document.getElementById('radio-station').textContent = RADIO_STATIONS[selectedMech];
+      showBanner(`CHASSIS SWITCHED: ${MECHAS[selectedMech].name}`);
+      spawnExplosion(player.x, 0.06, MECHAS[selectedMech].secondary, 14);
+    });
+
+    // Keyboard Fallback
+    const keys = {};
+    window.addEventListener('keydown', e => {
+      keys[e.code] = true;
+      if (e.code === 'Space') isFiring = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') isBoosting = true;
+      if (e.code === 'KeyQ') btnSwap.click();
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.code] = false;
+      if (e.code === 'Space') isFiring = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') isBoosting = false;
+    });
+
+    function spawnExplosion(roadX, z, color, count = 18) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: roadX,
+          z,
+          vx: (Math.random() - 0.5) * 0.06,
+          vy: (Math.random() - 0.8) * 9,
+          vz: (Math.random() - 0.5) * 0.02,
+          offsetY: 0,
+          life: 1,
+          color,
+          size: 3 + Math.random() * 5
+        });
+      }
+    }
+
+    function spawnEntity() {
+      const lanes = [-0.68, -0.24, 0.24, 0.68];
+      const lane = lanes[Math.floor(Math.random() * lanes.length)];
+      const roll = Math.random();
+
+      if (roll < 0.22) {
+        // Yakuza Yen Briefcase Pickup
+        entities.push({
+          type: 'yen',
+          x: lane,
+          z: 0.98,
+          hp: 1,
+          speed: 0.005
+        });
+      } else if (roll < 0.45 + wanted * 0.08) {
+        // Enemy JSDF Patrol Drone or Rival Yakuza Mech
+        const isEnemyMech = wanted >= 3 && Math.random() < 0.45;
+        entities.push({
+          type: isEnemyMech ? 'enemy_mech' : 'drone',
+          x: lane,
+          z: 0.98,
+          hp: isEnemyMech ? 90 : 40,
+          maxHp: isEnemyMech ? 90 : 40,
+          speed: isEnemyMech ? 0.0042 : 0.0062,
+          sway: Math.random() * Math.PI * 2
+        });
+      } else {
+        // Civilian Tokyo Kei-Van / Taxi
+        entities.push({
+          type: 'taxi',
+          x: lane,
+          z: 0.98,
+          hp: 30,
+          speed: 0.0055,
+          color: Math.random() < 0.5 ? '#ffe600' : '#00f0ff'
+        });
+      }
+    }
+
+    function fireWeapons(now) {
+      const mech = MECHAS[selectedMech];
+      if (!isFiring || now - lastShot < mech.fireRate) return;
+      lastShot = now;
+      cameraShake = Math.max(cameraShake, 3);
+
+      // Dual shoulder/arm plasma cannons in 3rd-person perspective
+      [-0.11, 0.11].forEach(offset => {
+        bullets.push({
+          x: player.x + offset,
+          z: 0.08,
+          vz: 0.036,
+          color: mech.bulletColor,
+          size: mech.bulletSize,
+          damage: mech.damage
+        });
+      });
+    }
+
+    function update(now) {
+      if (!gameRunning) return;
+      frameCount++;
+
+      const mech = MECHAS[selectedMech];
+
+      // Steering input
+      let steer = joyInputX;
+      if (keys['ArrowLeft'] || keys['KeyA']) steer -= 1;
+      if (keys['ArrowRight'] || keys['KeyD']) steer += 1;
+      steer = Math.max(-1, Math.min(1, steer));
+
+      // Boost handling
+      const boostingNow = isBoosting && boost > 2;
+      if (boostingNow) {
+        boost = Math.max(0, boost - 0.65);
+        cameraShake = Math.max(cameraShake, 2.5);
+      } else {
+        boost = Math.min(100, boost + 0.25);
+      }
+
+      const forwardSpeed = (0.0085 * mech.speed) * (boostingNow ? 1.75 : 1);
+      roadOffset = (roadOffset + forwardSpeed * 18) % 1;
+
+      player.vx += steer * 0.011 * mech.speed;
+      player.vx *= 0.84;
+      player.x = Math.max(-0.86, Math.min(0.86, player.x + player.vx));
+      player.tilt = player.vx * 5.5;
+      player.stride += forwardSpeed * 32;
+
+      fireWeapons(now);
+
+      // Scroll buildings toward camera
+      buildings.forEach(b => {
+        b.z -= forwardSpeed * 0.85;
+        if (b.z < 0) b.z += 1;
+      });
+
+      // Spawn enemies & traffic
+      if (frameCount % Math.max(22, 46 - wanted * 4) === 0) {
+        spawnEntity();
+      }
+
+      // Update Bullets
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.z += b.vz;
+        if (b.z > 1) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        // Hit detection against entities
+        for (let j = entities.length - 1; j >= 0; j--) {
+          const e = entities[j];
+          if (e.type === 'yen') continue;
+          if (Math.abs(b.z - e.z) < 0.05 && Math.abs(b.x - e.x) < 0.16) {
+            e.hp -= b.damage;
+            spawnExplosion(b.x, b.z, b.color, 6);
+            bullets.splice(i, 1);
+
+            if (e.hp <= 0) {
+              const reward = e.type === 'enemy_mech' ? 25000 : e.type === 'drone' ? 12000 : 5000;
+              yen += reward;
+              spawnExplosion(e.x, e.z, '#ff5e00', 22);
+              cameraShake = 8;
+              entities.splice(j, 1);
+
+              const newWanted = Math.min(5, 1 + Math.floor(yen / 45000));
+              if (newWanted > wanted) {
+                wanted = newWanted;
+                showBanner(`★ ${wanted}-STAR WANTED: JSDF HEAVY UNITS INBOUND!`);
+              }
+              updateHUD();
+            }
+            break;
+          }
+        }
+      }
+
+      // Update Entities
+      for (let i = entities.length - 1; i >= 0; i--) {
+        const e = entities[i];
+        e.z -= (forwardSpeed + e.speed * 0.45);
+        if (e.type === 'drone') {
+          e.sway += 0.08;
+          e.x += Math.sin(e.sway) * 0.006;
+        }
+
+        // Check collision with Player Mecha at z ~ 0.07
+        if (e.z < 0.12 && e.z > 0.01 && Math.abs(e.x - player.x) < 0.17) {
+          if (e.type === 'yen') {
+            yen += 15000;
+            hp = Math.min(100, hp + 8);
+            spawnExplosion(e.x, e.z, '#52ff7f', 12);
+            showBanner('+¥15,000 YAKUZA STASH COLLECTED!');
+            entities.splice(i, 1);
+            updateHUD();
+            continue;
+          } else if (boostingNow) {
+            // Jet-ramming obliterates traffic!
+            yen += 8000;
+            spawnExplosion(e.x, e.z, '#00f0ff', 20);
+            cameraShake = 9;
+            entities.splice(i, 1);
+            updateHUD();
+            continue;
+          } else {
+            hp -= e.type === 'enemy_mech' ? 26 : 16;
+            cameraShake = 12;
+            spawnExplosion(player.x, 0.07, '#ff1e56', 18);
+            entities.splice(i, 1);
+            updateHUD();
+
+            if (hp <= 0) {
+              gameRunning = false;
+              document.getElementById('final-score').textContent = `YAKUZA BOUNTY: ¥${yen.toLocaleString()}`;
+              document.getElementById('wasted-screen').style.display = 'flex';
+              return;
+            }
+            continue;
+          }
+        }
+
+        if (e.z < -0.05) {
+          entities.splice(i, 1);
+        }
+      }
+
+      // Update Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.z += p.vz;
+        p.offsetY += p.vy;
+        p.vy += 0.35;
+        p.life -= 0.045;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      if (cameraShake > 0) cameraShake *= 0.85;
+    }
+
+    // Draw 3rd-Person Back-View Mecha
+    function drawPlayerMecha() {
+      const mech = MECHAS[selectedMech];
+      const p = project(player.x, 0.06);
+      const bob = Math.sin(player.stride) * 5;
+      const legSwing = Math.sin(player.stride) * 10;
+
+      ctx.save();
+      ctx.translate(p.x, p.y + bob);
+      ctx.rotate(player.tilt * 0.35);
+
+      // Ground Neon Shadow
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.25)';
+      ctx.beginPath();
+      ctx.ellipse(0, 14, 44, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Left & Right Mecha Legs (3rd-person rear angle)
+      ctx.fillStyle = '#1b1d2e';
+      ctx.strokeStyle = mech.secondary;
+      ctx.lineWidth = 2;
+      // Left leg
+      ctx.fillRect(-24, -22 + legSwing * 0.5, 16, 32);
+      ctx.strokeRect(-24, -22 + legSwing * 0.5, 16, 32);
+      // Right leg
+      ctx.fillRect(8, -22 - legSwing * 0.5, 16, 32);
+      ctx.strokeRect(8, -22 - legSwing * 0.5, 16, 32);
+
+      // Jetpack Thrusters
+      const thrusterGlow = isBoosting ? 26 : 10 + Math.sin(frameCount * 0.4) * 3;
+      ctx.fillStyle = isBoosting ? '#00f0ff' : '#ff5e00';
+      ctx.beginPath();
+      ctx.arc(-14, -42, thrusterGlow * 0.45, 0, Math.PI * 2);
+      ctx.arc(14, -42, thrusterGlow * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Torso Armor (Rear View)
+      ctx.fillStyle = mech.primary;
+      ctx.beginPath();
+      ctx.moveTo(-30, -64);
+      ctx.lineTo(30, -64);
+      ctx.lineTo(22, -24);
+      ctx.lineTo(-22, -24);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Reactor Core Spine
+      ctx.fillStyle = mech.accent;
+      ctx.fillRect(-6, -58, 12, 26);
+
+      // Shoulder Pauldrons & Twin Cannons
+      ctx.fillStyle = mech.secondary;
+      ctx.fillRect(-42, -68, 16, 22);
+      ctx.fillRect(26, -68, 16, 22);
+
+      // Gun barrels pointing into the screen (toward horizon)
+      ctx.fillStyle = '#0e101c';
+      ctx.fillRect(-38, -78, 8, 14);
+      ctx.fillRect(30, -78, 8, 14);
+
+      // Mecha Head / V-Fin Crest
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-12, -80, 24, 15);
+      // Neon V-Fin
+      ctx.strokeStyle = mech.accent;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-22, -88);
+      ctx.lineTo(0, -76);
+      ctx.lineTo(22, -88);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawScene() {
+      ctx.save();
+      if (cameraShake > 0.3) {
+        ctx.translate((Math.random() - 0.5) * cameraShake, (Math.random() - 0.5) * cameraShake);
+      }
+
+      const horizonY = H * 0.37;
+
+      // 1. Vice-Tokyo Sunset / Cyber Sky
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+      skyGrad.addColorStop(0, '#09031a');
+      skyGrad.addColorStop(0.55, '#3b0b54');
+      skyGrad.addColorStop(1, '#ff2a6d');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, horizonY);
+
+      // Synthwave Sun + Mt. Fuji Silhouette
+      ctx.fillStyle = '#ffe600';
+      ctx.beginPath();
+      ctx.arc(W * 0.5, horizonY - 18, 54, Math.PI, 0);
+      ctx.fill();
+
+      // Mt. Fuji
+      ctx.fillStyle = '#14082e';
+      ctx.beginPath();
+      ctx.moveTo(W * 0.12, horizonY);
+      ctx.lineTo(W * 0.44, horizonY - 58);
+      ctx.lineTo(W * 0.56, horizonY - 58);
+      ctx.lineTo(W * 0.88, horizonY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Snow Cap on Fuji
+      ctx.fillStyle = '#ff9ce3';
+      ctx.beginPath();
+      ctx.moveTo(W * 0.44, horizonY - 58);
+      ctx.lineTo(W * 0.56, horizonY - 58);
+      ctx.lineTo(W * 0.61, horizonY - 40);
+      ctx.lineTo(W * 0.5, horizonY - 45);
+      ctx.lineTo(W * 0.39, horizonY - 40);
+      ctx.closePath();
+      ctx.fill();
+
+      // 2. Ground & Shinjuku Expressway
+      ctx.fillStyle = '#0c081c';
+      ctx.fillRect(0, horizonY, W, H - horizonY);
+
+      // Asphalt Trapezoid
+      const near = project(0, 0);
+      const far = project(0, 1);
+      ctx.fillStyle = '#171929';
+      ctx.beginPath();
+      ctx.moveTo(W * 0.5 - far.roadHalfWidth, far.y);
+      ctx.lineTo(W * 0.5 + far.roadHalfWidth, far.y);
+      ctx.lineTo(W * 0.5 + near.roadHalfWidth, near.y);
+      ctx.lineTo(W * 0.5 - near.roadHalfWidth, near.y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Neon Guardrails
+      ctx.strokeStyle = '#ff007f';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(W * 0.5 - far.roadHalfWidth, far.y);
+      ctx.lineTo(W * 0.5 - near.roadHalfWidth, near.y);
+      ctx.moveTo(W * 0.5 + far.roadHalfWidth, far.y);
+      ctx.lineTo(W * 0.5 + near.roadHalfWidth, near.y);
+      ctx.stroke();
+
+      // Animated Lane Dividers
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.55)';
+      ctx.lineWidth = 2;
+      [-0.45, 0, 0.45].forEach(laneX => {
+        for (let step = 0; step < 12; step++) {
+          const z1 = ((step + (1 - roadOffset)) / 12);
+          const z2 = Math.min(1, z1 + 0.04);
+          if (z1 > 1) continue;
+          const p1 = project(laneX, z1);
+          const p2 = project(laneX, z2);
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+      });
+
+      // 3. Neo-Shinjuku Skyline Buildings (sorted far-to-near)
+      const sortedBuildings = [...buildings].sort((a, b) => b.z - a.z);
+      sortedBuildings.forEach(b => {
+        const edgeX = b.side * (1.18 + b.width * 0.4);
+        const p = project(edgeX, b.z);
+        const bw = 95 * p.scale * b.width * 2.2;
+        const bh = 210 * p.scale * b.height;
+        const bx = b.side === -1 ? p.x - bw : p.x;
+        const by = p.y - bh;
+
+        ctx.fillStyle = b.color;
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeStyle = b.neon;
+        ctx.lineWidth = Math.max(1, 2 * p.scale);
+        ctx.strokeRect(bx, by, bw, bh);
+
+        // Glowing Vertical Kanji Neon Sign
+        if (p.scale > 0.32) {
+          ctx.fillStyle = b.neon;
+          ctx.font = `900 ${Math.floor(14 * p.scale)}px "Noto Sans JP", sans-serif`;
+          ctx.fillText(b.kanji, bx + bw * 0.25, by + bh * 0.45);
+        }
+      });
+
+      // 4. Entities (Sorted far to near)
+      const sortedEntities = [...entities].sort((a, b) => b.z - a.z);
+      sortedEntities.forEach(e => {
+        const p = project(e.x, e.z);
+        const s = p.scale;
+
+        if (e.type === 'yen') {
+          ctx.save();
+          ctx.translate(p.x, p.y - 16 * s);
+          ctx.fillStyle = '#52ff7f';
+          ctx.shadowColor = '#52ff7f';
+          ctx.shadowBlur = 12;
+          ctx.fillRect(-16 * s, -12 * s, 32 * s, 24 * s);
+          ctx.fillStyle = '#052910';
+          ctx.font = `900 ${Math.max(9, Math.floor(15 * s))}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText('¥', 0, 5 * s);
+          ctx.restore();
+        } else if (e.type === 'taxi') {
+          // Tokyo Kei-Taxi Box Car
+          const cw = 46 * s;
+          const ch = 28 * s;
+          ctx.fillStyle = e.color;
+          ctx.fillRect(p.x - cw / 2, p.y - ch, cw, ch);
+          ctx.fillStyle = '#111625';
+          ctx.fillRect(p.x - cw * 0.36, p.y - ch * 0.85, cw * 0.72, ch * 0.38);
+          // Tail lights
+          ctx.fillStyle = '#ff1e56';
+          ctx.fillRect(p.x - cw * 0.42, p.y - ch * 0.32, cw * 0.2, ch * 0.16);
+          ctx.fillRect(p.x + cw * 0.22, p.y - ch * 0.32, cw * 0.2, ch * 0.16);
+        } else if (e.type === 'drone') {
+          // JSDF Security Drone
+          const r = 20 * s;
+          ctx.fillStyle = '#24293e';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y - 26 * s, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#ff007f';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          // Glowing red eye
+          ctx.fillStyle = '#ff1e56';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y - 26 * s, r * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (e.type === 'enemy_mech') {
+          // Rival Heavy Yakuza Mecha
+          const mw = 54 * s;
+          const mh = 68 * s;
+          ctx.fillStyle = '#3b0d36';
+          ctx.fillRect(p.x - mw / 2, p.y - mh, mw, mh * 0.75);
+          ctx.strokeStyle = '#ffe600';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(p.x - mw / 2, p.y - mh, mw, mh * 0.75);
+          // Glowing Visor
+          ctx.fillStyle = '#ff1e56';
+          ctx.fillRect(p.x - mw * 0.3, p.y - mh * 0.88, mw * 0.6, mh * 0.12);
+        }
+      });
+
+      // 5. Player Projectiles
+      bullets.forEach(b => {
+        const p = project(b.x, b.z);
+        ctx.fillStyle = b.color;
+        ctx.shadowColor = b.color;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y - 34 * p.scale, b.size * p.scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // 6. Player 3rd-Person Mecha
+      if (gameRunning) {
+        drawPlayerMecha();
+      }
+
+      // 7. Explosion Particles
+      particles.forEach(pt => {
+        const p = project(pt.x, pt.z);
+        ctx.globalAlpha = Math.max(0, pt.life);
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y - 25 * p.scale + pt.offsetY, pt.size * p.scale, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      ctx.restore();
+      drawRadar();
+    }
+
+    function drawRadar() {
+      rCtx.clearRect(0, 0, 80, 80);
+      // Grid crosshairs
+      rCtx.strokeStyle = 'rgba(0, 240, 255, 0.2)';
+      rCtx.lineWidth = 1;
+      rCtx.beginPath();
+      rCtx.moveTo(40, 0); rCtx.lineTo(40, 80);
+      rCtx.moveTo(0, 40); rCtx.lineTo(80, 40);
+      rCtx.stroke();
+
+      // Player Blip
+      rCtx.fillStyle = '#00f0ff';
+      rCtx.beginPath();
+      rCtx.arc(40 + player.x * 24, 64, 4, 0, Math.PI * 2);
+      rCtx.fill();
+
+      // Entity Blips
+      entities.forEach(e => {
+        const rx = 40 + e.x * 24;
+        const ry = 64 - e.z * 52;
+        rCtx.fillStyle = e.type === 'yen' ? '#52ff7f' : e.type === 'taxi' ? '#ffe600' : '#ff1e56';
+        rCtx.fillRect(rx - 2, ry - 2, 4, 4);
+      });
+    }
+
+    function loop(now) {
+      update(now);
+      drawScene();
+      requestAnimationFrame(loop);
+    }
+
+    initBuildings();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
