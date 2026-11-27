@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>GRAND MECHA AUTO VI: 3D HOUSE CITY V2</title>
+  <title>GRAND MECHA AUTO VI: 3D HOUSE CITY V3</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Noto+Sans+JP:wght@700;900&display=swap');
 
@@ -375,13 +375,13 @@
     <div id="canvas-host"></div>
 
     <div id="splash-screen">
-      <div class="bootleg-badge">★ 3D HOUSE CITY • CARS + NON-CHASING POLICE ★</div>
+      <div class="bootleg-badge">★ 3D HOUSE CITY • ONLINE TEXTURES + FREE LOOK ★</div>
 
       <div>
         <div class="title-jp">グランド・メカ・オート</div>
         <div class="title-main">GRAND MECHA<br>AUTO</div>
         <div class="title-vi">VI</div>
-        <div class="sub-edition">3D HOUSE NEIGHBORHOOD EDITION V2</div>
+        <div class="sub-edition">3D HOUSE NEIGHBORHOOD EDITION V3</div>
       </div>
 
       <div class="mech-selector">
@@ -403,14 +403,14 @@
       </div>
 
       <button id="start-btn">WALK IN 3D CITY</button>
-      <div class="fake-store-note">Stick / WASD / Arrows to Turn &amp; Walk • Drag Screen to Orbit Cam • Space = Blast</div>
+      <div class="fake-store-note">Stick / WASD to Walk • Drag Anywhere to Look 360° • Space = Blast</div>
     </div>
 
     <div id="hud">
       <div class="hud-top">
         <div class="peace-tag">
-          <strong>CARS &amp; POLICE PRESENT</strong>
-          Police Never Chase<br>Turn Around Anytime
+          <strong>FREE 360° LOOK</strong>
+          Drag Screen to Aim/Look<br>Police Never Chase
         </div>
         <div class="gta-stats">
           <div class="wanted-stars" id="stars-box">
@@ -444,7 +444,7 @@
     const host = document.getElementById('canvas-host');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x140b2e);
-    scene.fog = new THREE.FogExp2(0x140b2e, 0.01);
+    scene.fog = new THREE.FogExp2(0x140b2e, 0.009);
 
     const camera = new THREE.PerspectiveCamera(60, host.clientWidth / host.clientHeight, 0.1, 240);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -459,16 +459,57 @@
     });
 
     // Lighting
-    const hemiLight = new THREE.HemisphereLight(0xffb6f9, 0x1b2447, 1.15);
+    const hemiLight = new THREE.HemisphereLight(0xffb6f9, 0x1b2447, 1.2);
     scene.add(hemiLight);
-    const dirLight = new THREE.DirectionalLight(0x00f0ff, 0.9);
+    const dirLight = new THREE.DirectionalLight(0x00f0ff, 0.95);
     dirLight.position.set(25, 45, 20);
     scene.add(dirLight);
 
-    // Ground & Street Grid (Streets run every 16 units: -80, -64, -48, -32, -16, 0, 16, 32, 48, 64, 80)
+    // Load online art textures (with safe fallback if offline/blocked)
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+
+    function makeFallbackTex(bg, fg, label) {
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 128;
+      const g = c.getContext('2d');
+      g.fillStyle = bg; g.fillRect(0, 0, 128, 128);
+      g.strokeStyle = fg; g.lineWidth = 4;
+      g.strokeRect(6, 6, 116, 116);
+      g.fillStyle = fg; g.font = 'bold 18px sans-serif';
+      g.fillText(label, 18, 70);
+      const t = new THREE.CanvasTexture(c);
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      return t;
+    }
+
+    const streetTex = loader.load(
+      'https://threejs.org/examples/textures/hardwood2_diffuse.jpg',
+      undefined,
+      undefined,
+      () => {}
+    );
+    streetTex.wrapS = streetTex.wrapT = THREE.RepeatWrapping;
+    streetTex.repeat.set(28, 28);
+
+    const houseWallTex = loader.load(
+      'https://threejs.org/examples/textures/brick_diffuse.jpg',
+      undefined,
+      undefined,
+      () => {}
+    );
+    houseWallTex.wrapS = houseWallTex.wrapT = THREE.RepeatWrapping;
+
+    const mechArmorTex = loader.load(
+      'https://threejs.org/examples/textures/uv_grid_opengl.jpg',
+      undefined,
+      undefined,
+      () => {}
+    );
+
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(240, 240),
-      new THREE.MeshStandardMaterial({ color: 0x1c2033, roughness: 0.85 })
+      new THREE.MeshStandardMaterial({ color: 0x222742, map: streetTex, roughness: 0.85 })
     );
     ground.rotation.x = -Math.PI / 2;
     scene.add(ground);
@@ -494,11 +535,11 @@
     let lastShot = 0;
     let walkCycle = 0;
 
-    // Camera orbit angles so turning around always lets you see where you're going
-    let camYaw = 0;
-    let manualYawOffset = 0;
+    // Independent 360° Camera Look Angles (no auto-fight with joystick)
+    let lookYaw = 0;
+    let lookPitch = 0.42;
 
-    // Build Walking Mecha
+    // Build Walking Mecha with online armor texture art
     const mechaGroup = new THREE.Group();
     const leftLeg = new THREE.Group();
     const rightLeg = new THREE.Group();
@@ -509,8 +550,17 @@
       rightLeg.clear();
 
       const preset = MECHAS[selectedMech];
-      const torsoMat = new THREE.MeshStandardMaterial({ color: preset.color, roughness: 0.35, metalness: 0.4 });
-      const accentMat = new THREE.MeshStandardMaterial({ color: preset.accent, emissive: preset.accent, emissiveIntensity: 0.35 });
+      const torsoMat = new THREE.MeshStandardMaterial({
+        color: preset.color,
+        map: mechArmorTex,
+        roughness: 0.35,
+        metalness: 0.4
+      });
+      const accentMat = new THREE.MeshStandardMaterial({
+        color: preset.accent,
+        emissive: preset.accent,
+        emissiveIntensity: 0.35
+      });
       const darkMat = new THREE.MeshStandardMaterial({ color: 0x1d2138, roughness: 0.6 });
 
       const legGeo = new THREE.BoxGeometry(0.65, 1.5, 0.75);
@@ -527,7 +577,6 @@
       const torso = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.7, 1.2), torsoMat);
       torso.position.y = 2.35;
 
-      // Front visor so you clearly see which way the mecha is facing when turning around
       const head = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.8, 0.95), accentMat);
       head.position.y = 3.6;
 
@@ -545,23 +594,21 @@
     buildMecha();
     scene.add(mechaGroup);
 
-    // City Houses, Cars, Police Cars (non-chasing), Pickups, Projectiles
     const houses = [];
-    const vehicles = []; // both civilian cars and non-chasing police cars
+    const vehicles = [];
     const pickups = [];
     const projectiles = [];
 
     const houseColors = [0xf7e1c6, 0xd8e2dc, 0xffe5d9, 0xcad2c5, 0xfde2e4, 0xfff1d0];
     const roofColors = [0x3b4d7a, 0x8d3b3b, 0x2f4858, 0x5c4d7d];
     const carColors = [0x00d2ff, 0xffbe0b, 0x8338ec, 0xfb5607, 0x3a86ff, 0xff006e];
-
-    // Streets sit at multiples of 16; house blocks sit centered at 8, 24, 40...
     const STREET_LINES = [-80, -64, -48, -32, -16, 0, 16, 32, 48, 64, 80];
 
     function createCarMesh(isPolice, colorHex) {
       const car = new THREE.Group();
       const bodyMat = new THREE.MeshStandardMaterial({
         color: isPolice ? 0x161b2e : colorHex,
+        map: mechArmorTex,
         roughness: 0.4,
         metalness: 0.3
       });
@@ -598,7 +645,6 @@
       vehicles.length = 0;
       pickups.length = 0;
 
-      // Houses placed on blocks between streets
       for (let bx = -72; bx <= 72; bx += 16) {
         for (let bz = -72; bz <= 72; bz += 16) {
           if (Math.hypot(bx, bz) < 10) continue;
@@ -611,7 +657,11 @@
 
           const walls = new THREE.Mesh(
             new THREE.BoxGeometry(w, h, d),
-            new THREE.MeshStandardMaterial({ color: houseColors[Math.floor(Math.random() * houseColors.length)], roughness: 0.75 })
+            new THREE.MeshStandardMaterial({
+              color: houseColors[Math.floor(Math.random() * houseColors.length)],
+              map: houseWallTex,
+              roughness: 0.75
+            })
           );
           walls.position.y = h / 2;
 
@@ -643,9 +693,8 @@
         }
       }
 
-      // Spawn Civilian Cars & Non-Chasing Police Cruisers along streets
       for (let i = 0; i < 22; i++) {
-        const isPolice = i % 3 === 0; // ~7 police cars patrolling calmly
+        const isPolice = i % 3 === 0;
         const alongX = i % 2 === 0;
         const laneCoord = STREET_LINES[Math.floor(Math.random() * STREET_LINES.length)];
         const dir = Math.random() < 0.5 ? 1 : -1;
@@ -719,7 +768,6 @@
       }
     }
 
-    // UI Events
     document.querySelectorAll('.mech-card').forEach(card => {
       card.addEventListener('click', () => {
         document.querySelectorAll('.mech-card').forEach(c => c.classList.remove('active'));
@@ -736,17 +784,17 @@
       wanted = 0;
       hp = 100;
       boost = 100;
-      camYaw = 0;
-      manualYawOffset = 0;
+      lookYaw = 0;
+      lookPitch = 0.42;
       mechaGroup.position.set(0, 0, 0);
       mechaGroup.rotation.y = 0;
       populateWorld();
       updateHUD();
-      showBanner('TURN AROUND ANYTIME • CARS & NON-CHASING POLICE SPAWNED');
+      showBanner('DRAG ANYWHERE TO LOOK 360° • STICK TO WALK');
       gameRunning = true;
     });
 
-    // Joystick
+    // Joystick (Walk only)
     const joyZone = document.getElementById('joystick-zone');
     const joyKnob = document.getElementById('joystick-knob');
     let joyActive = false;
@@ -779,38 +827,47 @@
     window.addEventListener('mousemove', e => { if (joyActive) updateJoy(e.clientX, e.clientY); });
     window.addEventListener('mouseup', endJoy);
 
-    // Drag anywhere else on canvas to orbit camera around mecha
-    let dragCam = false;
-    let lastDragX = 0;
+    // Free 360° Look Orbit (independent from joystick, never fights movement)
+    let lookDrag = false;
+    let lastLookX = 0;
+    let lastLookY = 0;
+
+    function applyLookDelta(dx, dy) {
+      lookYaw -= dx * 0.011;
+      lookPitch = Math.max(0.14, Math.min(1.15, lookPitch + dy * 0.008));
+    }
+
     renderer.domElement.addEventListener('touchstart', e => {
       if (e.touches.length === 1) {
-        dragCam = true;
-        lastDragX = e.touches[0].clientX;
+        lookDrag = true;
+        lastLookX = e.touches[0].clientX;
+        lastLookY = e.touches[0].clientY;
       }
     });
     renderer.domElement.addEventListener('touchmove', e => {
-      if (dragCam && e.touches.length === 1) {
-        const dx = e.touches[0].clientX - lastDragX;
-        lastDragX = e.touches[0].clientX;
-        manualYawOffset -= dx * 0.012;
+      if (lookDrag && e.touches.length === 1) {
+        const t = e.touches[0];
+        applyLookDelta(t.clientX - lastLookX, t.clientY - lastLookY);
+        lastLookX = t.clientX;
+        lastLookY = t.clientY;
       }
     });
-    renderer.domElement.addEventListener('touchend', () => { dragCam = false; });
+    renderer.domElement.addEventListener('touchend', () => { lookDrag = false; });
 
     renderer.domElement.addEventListener('mousedown', e => {
-      dragCam = true;
-      lastDragX = e.clientX;
+      lookDrag = true;
+      lastLookX = e.clientX;
+      lastLookY = e.clientY;
     });
     window.addEventListener('mousemove', e => {
-      if (dragCam && !joyActive) {
-        const dx = e.clientX - lastDragX;
-        lastDragX = e.clientX;
-        manualYawOffset -= dx * 0.01;
+      if (lookDrag) {
+        applyLookDelta(e.clientX - lastLookX, e.clientY - lastLookY);
+        lastLookX = e.clientX;
+        lastLookY = e.clientY;
       }
     });
-    window.addEventListener('mouseup', () => { dragCam = false; });
+    window.addEventListener('mouseup', () => { lookDrag = false; });
 
-    // Buttons & Keys
     const bindHold = (id, setter) => {
       const el = document.getElementById(id);
       el.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); setter(true); });
@@ -873,17 +930,29 @@
 
       if (gameRunning) {
         const preset = MECHAS[selectedMech];
-        let inX = joyX;
-        let inY = joyY;
-        if (keys['KeyA'] || keys['ArrowLeft']) inX -= 1;
-        if (keys['KeyD'] || keys['ArrowRight']) inX += 1;
-        if (keys['KeyW'] || keys['ArrowUp']) inY -= 1;
-        if (keys['KeyS'] || keys['ArrowDown']) inY += 1;
+        let stickX = joyX;
+        let stickY = joyY;
+        if (keys['KeyA'] || keys['ArrowLeft']) stickX -= 1;
+        if (keys['KeyD'] || keys['ArrowRight']) stickX += 1;
+        if (keys['KeyW'] || keys['ArrowUp']) stickY -= 1;
+        if (keys['KeyS'] || keys['ArrowDown']) stickY += 1;
 
-        const len = Math.hypot(inX, inY);
+        const len = Math.hypot(stickX, stickY);
         if (len > 0.05) {
-          const nx = inX / Math.max(1, len);
-          const nz = inY / Math.max(1, len);
+          const sx = stickX / Math.max(1, len);
+          const sy = stickY / Math.max(1, len);
+
+          // Camera forward & right projected onto XZ plane so walking/turning is always intuitive
+          const camForwardX = Math.sin(lookYaw);
+          const camForwardZ = Math.cos(lookYaw);
+          const camRightX = Math.cos(lookYaw);
+          const camRightZ = -Math.sin(lookYaw);
+
+          const worldX = camRightX * sx - camForwardX * sy;
+          const worldZ = camRightZ * sx - camForwardZ * sy;
+          const wLen = Math.hypot(worldX, worldZ) || 1;
+          const dirX = worldX / wLen;
+          const dirZ = worldZ / wLen;
 
           const sprinting = isBoosting && boost > 2;
           if (sprinting) {
@@ -893,16 +962,11 @@
           }
 
           const spd = preset.speed * (sprinting ? 1.75 : 1) * Math.min(1, len);
-          mechaGroup.position.x = Math.max(-105, Math.min(105, mechaGroup.position.x + nx * spd * dt));
-          mechaGroup.position.z = Math.max(-105, Math.min(105, mechaGroup.position.z + nz * spd * dt));
+          mechaGroup.position.x = Math.max(-105, Math.min(105, mechaGroup.position.x + dirX * spd * dt));
+          mechaGroup.position.z = Math.max(-105, Math.min(105, mechaGroup.position.z + dirZ * spd * dt));
 
-          // Turn mecha smoothly to face movement direction (including turning around 180 deg)
-          const targetFacing = Math.atan2(nx, nz);
-          mechaGroup.rotation.y += shortestAngleDiff(mechaGroup.rotation.y, targetFacing) * Math.min(1, dt * 12);
-
-          // Swing camera behind movement direction so you can see where you're going when turning back
-          manualYawOffset *= Math.pow(0.2, dt);
-          camYaw += shortestAngleDiff(camYaw, targetFacing + manualYawOffset) * Math.min(1, dt * 4.5);
+          const targetFacing = Math.atan2(dirX, dirZ);
+          mechaGroup.rotation.y += shortestAngleDiff(mechaGroup.rotation.y, targetFacing) * Math.min(1, dt * 14);
 
           walkCycle += dt * (sprinting ? 18 : 11);
           leftLeg.rotation.x = Math.sin(walkCycle) * 0.65;
@@ -964,7 +1028,7 @@
 
         fireBlast(now);
 
-        // Update projectiles against houses & vehicles
+        // Projectiles vs houses & vehicles
         for (let i = projectiles.length - 1; i >= 0; i--) {
           const b = projectiles[i];
           b.mesh.position.addScaledVector(b.vel, dt);
@@ -1011,14 +1075,17 @@
           }
         }
 
-        // Orbiting 3rd-person camera behind mecha's facing/travel direction
-        const camDist = 13.5;
+        // Spherical 360° orbit camera around mecha
+        const camDist = 14;
+        const horizDist = Math.cos(lookPitch) * camDist;
+        const vertDist = Math.sin(lookPitch) * camDist + 1.8;
+
         const desiredCam = new THREE.Vector3(
-          mechaGroup.position.x - Math.sin(camYaw) * camDist,
-          mechaGroup.position.y + 8.5,
-          mechaGroup.position.z - Math.cos(camYaw) * camDist
+          mechaGroup.position.x - Math.sin(lookYaw) * horizDist,
+          mechaGroup.position.y + vertDist,
+          mechaGroup.position.z - Math.cos(lookYaw) * horizDist
         );
-        camera.position.lerp(desiredCam, 0.12);
+        camera.position.lerp(desiredCam, 0.16);
         camera.lookAt(mechaGroup.position.x, mechaGroup.position.y + 2.2, mechaGroup.position.z);
       } else {
         camera.position.set(Math.sin(now * 0.0004) * 18, 11, Math.cos(now * 0.0004) * 18);
