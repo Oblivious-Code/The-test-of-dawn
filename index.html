@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>GRAND MECHA AUTO VI: 3D HOUSE CITY</title>
+  <title>GRAND MECHA AUTO VI: 3D HOUSE CITY V2</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Noto+Sans+JP:wght@700;900&display=swap');
 
@@ -375,13 +375,13 @@
     <div id="canvas-host"></div>
 
     <div id="splash-screen">
-      <div class="bootleg-badge">★ 3D HOUSE CITY • ZERO POLICE ★</div>
+      <div class="bootleg-badge">★ 3D HOUSE CITY • CARS + NON-CHASING POLICE ★</div>
 
       <div>
         <div class="title-jp">グランド・メカ・オート</div>
         <div class="title-main">GRAND MECHA<br>AUTO</div>
         <div class="title-vi">VI</div>
-        <div class="sub-edition">3D HOUSE NEIGHBORHOOD EDITION</div>
+        <div class="sub-edition">3D HOUSE NEIGHBORHOOD EDITION V2</div>
       </div>
 
       <div class="mech-selector">
@@ -403,14 +403,14 @@
       </div>
 
       <button id="start-btn">WALK IN 3D CITY</button>
-      <div class="fake-store-note">Left Stick / WASD / Arrows to Walk • Space to Blast • Shift to Sprint</div>
+      <div class="fake-store-note">Stick / WASD / Arrows to Turn &amp; Walk • Drag Screen to Orbit Cam • Space = Blast</div>
     </div>
 
     <div id="hud">
       <div class="hud-top">
         <div class="peace-tag">
-          <strong>NO POLICE CHASE</strong>
-          3D House Blocks<br>Wanted = Flex Only
+          <strong>CARS &amp; POLICE PRESENT</strong>
+          Police Never Chase<br>Turn Around Anytime
         </div>
         <div class="gta-stats">
           <div class="wanted-stars" id="stars-box">
@@ -444,9 +444,9 @@
     const host = document.getElementById('canvas-host');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x140b2e);
-    scene.fog = new THREE.FogExp2(0x140b2e, 0.011);
+    scene.fog = new THREE.FogExp2(0x140b2e, 0.01);
 
-    const camera = new THREE.PerspectiveCamera(60, host.clientWidth / host.clientHeight, 0.1, 220);
+    const camera = new THREE.PerspectiveCamera(60, host.clientWidth / host.clientHeight, 0.1, 240);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(host.clientWidth, host.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -459,16 +459,17 @@
     });
 
     // Lighting
-    const hemiLight = new THREE.HemisphereLight(0xffb6f9, 0x1b2447, 1.1);
+    const hemiLight = new THREE.HemisphereLight(0xffb6f9, 0x1b2447, 1.15);
     scene.add(hemiLight);
     const dirLight = new THREE.DirectionalLight(0x00f0ff, 0.9);
     dirLight.position.set(25, 45, 20);
     scene.add(dirLight);
 
-    // Ground & Street Grid (City made of houses)
-    const groundGeo = new THREE.PlaneGeometry(240, 240);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x1c2033, roughness: 0.85 });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
+    // Ground & Street Grid (Streets run every 16 units: -80, -64, -48, -32, -16, 0, 16, 32, 48, 64, 80)
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(240, 240),
+      new THREE.MeshStandardMaterial({ color: 0x1c2033, roughness: 0.85 })
+    );
     ground.rotation.x = -Math.PI / 2;
     scene.add(ground);
 
@@ -477,9 +478,9 @@
     scene.add(gridHelper);
 
     const MECHAS = [
-      { name: 'RX-06 RONIN', color: 0xff007f, accent: 0x00f0ff, speed: 12, fireRate: 150 },
-      { name: 'MZ-99 KAIJU', color: 0xff5e00, accent: 0xffe600, speed: 9.5, fireRate: 240 },
-      { name: 'AE-86 DRIFT', color: 0xf4f4f8, accent: 0xff1e56, speed: 15, fireRate: 120 }
+      { name: 'RX-06 RONIN', color: 0xff007f, accent: 0x00f0ff, speed: 13, fireRate: 150 },
+      { name: 'MZ-99 KAIJU', color: 0xff5e00, accent: 0xffe600, speed: 10.5, fireRate: 240 },
+      { name: 'AE-86 DRIFT', color: 0xf4f4f8, accent: 0xff1e56, speed: 16, fireRate: 120 }
     ];
 
     let selectedMech = 0;
@@ -493,11 +494,14 @@
     let lastShot = 0;
     let walkCycle = 0;
 
-    // Build Mecha Character in 3D
+    // Camera orbit angles so turning around always lets you see where you're going
+    let camYaw = 0;
+    let manualYawOffset = 0;
+
+    // Build Walking Mecha
     const mechaGroup = new THREE.Group();
     const leftLeg = new THREE.Group();
     const rightLeg = new THREE.Group();
-    let torsoMat, accentMat;
 
     function buildMecha() {
       while (mechaGroup.children.length > 0) mechaGroup.remove(mechaGroup.children[0]);
@@ -505,8 +509,8 @@
       rightLeg.clear();
 
       const preset = MECHAS[selectedMech];
-      torsoMat = new THREE.MeshStandardMaterial({ color: preset.color, roughness: 0.35, metalness: 0.4 });
-      accentMat = new THREE.MeshStandardMaterial({ color: preset.accent, emissive: preset.accent, emissiveIntensity: 0.35 });
+      const torsoMat = new THREE.MeshStandardMaterial({ color: preset.color, roughness: 0.35, metalness: 0.4 });
+      const accentMat = new THREE.MeshStandardMaterial({ color: preset.accent, emissive: preset.accent, emissiveIntensity: 0.35 });
       const darkMat = new THREE.MeshStandardMaterial({ color: 0x1d2138, roughness: 0.6 });
 
       const legGeo = new THREE.BoxGeometry(0.65, 1.5, 0.75);
@@ -523,74 +527,115 @@
       const torso = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.7, 1.2), torsoMat);
       torso.position.y = 2.35;
 
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.8, 0.9), accentMat);
+      // Front visor so you clearly see which way the mecha is facing when turning around
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.8, 0.95), accentMat);
       head.position.y = 3.6;
+
+      const visor = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 0.2), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      visor.position.set(0, 3.65, 0.45);
 
       const cannonL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 1.4), darkMat);
       cannonL.position.set(-1.15, 2.7, 0.3);
       const cannonR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 1.4), darkMat);
       cannonR.position.set(1.15, 2.7, 0.3);
 
-      mechaGroup.add(leftLeg, rightLeg, torso, head, cannonL, cannonR);
+      mechaGroup.add(leftLeg, rightLeg, torso, head, visor, cannonL, cannonR);
     }
 
     buildMecha();
     scene.add(mechaGroup);
 
-    // Build City of Houses (purely houses + streets, no police)
+    // City Houses, Cars, Police Cars (non-chasing), Pickups, Projectiles
     const houses = [];
+    const vehicles = []; // both civilian cars and non-chasing police cars
     const pickups = [];
     const projectiles = [];
 
     const houseColors = [0xf7e1c6, 0xd8e2dc, 0xffe5d9, 0xcad2c5, 0xfde2e4, 0xfff1d0];
     const roofColors = [0x3b4d7a, 0x8d3b3b, 0x2f4858, 0x5c4d7d];
+    const carColors = [0x00d2ff, 0xffbe0b, 0x8338ec, 0xfb5607, 0x3a86ff, 0xff006e];
 
-    function populateCity() {
+    // Streets sit at multiples of 16; house blocks sit centered at 8, 24, 40...
+    const STREET_LINES = [-80, -64, -48, -32, -16, 0, 16, 32, 48, 64, 80];
+
+    function createCarMesh(isPolice, colorHex) {
+      const car = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: isPolice ? 0x161b2e : colorHex,
+        roughness: 0.4,
+        metalness: 0.3
+      });
+      const cabinMat = new THREE.MeshStandardMaterial({
+        color: isPolice ? 0xf8fafc : 0x232942,
+        roughness: 0.5
+      });
+
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.9, 4.2), bodyMat);
+      chassis.position.y = 0.65;
+
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 2.1), cabinMat);
+      cabin.position.set(0, 1.35, -0.2);
+
+      car.add(chassis, cabin);
+
+      let sirenA = null, sirenB = null;
+      if (isPolice) {
+        sirenA = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.25, 0.35), new THREE.MeshBasicMaterial({ color: 0xff1e56 }));
+        sirenA.position.set(-0.45, 1.8, -0.2);
+        sirenB = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.25, 0.35), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
+        sirenB.position.set(0.45, 1.8, -0.2);
+        car.add(sirenA, sirenB);
+      }
+
+      return { car, sirenA, sirenB };
+    }
+
+    function populateWorld() {
       houses.forEach(h => scene.remove(h.mesh));
+      vehicles.forEach(v => scene.remove(v.car));
       pickups.forEach(p => scene.remove(p.mesh));
       houses.length = 0;
+      vehicles.length = 0;
       pickups.length = 0;
 
-      // Place houses along blocks leaving open streets every 16 units
-      for (let gx = -88; gx <= 88; gx += 16) {
-        for (let gz = -88; gz <= 88; gz += 16) {
-          // Leave a clear spawn plaza near origin
-          if (Math.hypot(gx, gz) < 12) continue;
-          if (Math.random() < 0.16) continue; // occasional empty lot
+      // Houses placed on blocks between streets
+      for (let bx = -72; bx <= 72; bx += 16) {
+        for (let bz = -72; bz <= 72; bz += 16) {
+          if (Math.hypot(bx, bz) < 10) continue;
+          if (Math.random() < 0.14) continue;
 
           const hGroup = new THREE.Group();
-          const w = 5.2 + Math.random() * 2.2;
-          const d = 5.2 + Math.random() * 2.2;
+          const w = 5.4 + Math.random() * 2.0;
+          const d = 5.4 + Math.random() * 2.0;
           const h = 3.6 + Math.random() * 2.4;
 
-          const wallMat = new THREE.MeshStandardMaterial({
-            color: houseColors[Math.floor(Math.random() * houseColors.length)],
-            roughness: 0.75
-          });
-          const walls = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+          const walls = new THREE.Mesh(
+            new THREE.BoxGeometry(w, h, d),
+            new THREE.MeshStandardMaterial({ color: houseColors[Math.floor(Math.random() * houseColors.length)], roughness: 0.75 })
+          );
           walls.position.y = h / 2;
 
-          const roofMat = new THREE.MeshStandardMaterial({
-            color: roofColors[Math.floor(Math.random() * roofColors.length)],
-            roughness: 0.6
-          });
-          const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.76, 2.2, 4), roofMat);
+          const roof = new THREE.Mesh(
+            new THREE.ConeGeometry(Math.max(w, d) * 0.76, 2.2, 4),
+            new THREE.MeshStandardMaterial({ color: roofColors[Math.floor(Math.random() * roofColors.length)], roughness: 0.6 })
+          );
           roof.position.y = h + 1.1;
           roof.rotation.y = Math.PI / 4;
 
-          // Warm lit window
-          const winMat = new THREE.MeshBasicMaterial({ color: 0xffe680 });
-          const win = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.0, 0.15), winMat);
+          const win = new THREE.Mesh(
+            new THREE.BoxGeometry(1.1, 1.0, 0.15),
+            new THREE.MeshBasicMaterial({ color: 0xffe680 })
+          );
           win.position.set(0, h * 0.55, d / 2 + 0.05);
 
           hGroup.add(walls, roof, win);
-          hGroup.position.set(gx, 0, gz);
+          hGroup.position.set(bx, 0, bz);
           scene.add(hGroup);
 
           houses.push({
             mesh: hGroup,
-            x: gx,
-            z: gz,
+            x: bx,
+            z: bz,
             radius: Math.max(w, d) * 0.52,
             hp: 60,
             intact: true
@@ -598,18 +643,50 @@
         }
       }
 
-      // Scatter Yen cash pickups around the houses
+      // Spawn Civilian Cars & Non-Chasing Police Cruisers along streets
+      for (let i = 0; i < 22; i++) {
+        const isPolice = i % 3 === 0; // ~7 police cars patrolling calmly
+        const alongX = i % 2 === 0;
+        const laneCoord = STREET_LINES[Math.floor(Math.random() * STREET_LINES.length)];
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        const posAlong = (Math.random() - 0.5) * 160;
+
+        const { car, sirenA, sirenB } = createCarMesh(
+          isPolice,
+          carColors[Math.floor(Math.random() * carColors.length)]
+        );
+
+        const x = alongX ? posAlong : laneCoord;
+        const z = alongX ? laneCoord : posAlong;
+        car.position.set(x, 0, z);
+        car.rotation.y = alongX ? (dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (dir > 0 ? 0 : Math.PI);
+        scene.add(car);
+
+        vehicles.push({
+          car,
+          sirenA,
+          sirenB,
+          isPolice,
+          alongX,
+          dir,
+          speed: isPolice ? 9.5 : 8 + Math.random() * 5,
+          hp: isPolice ? 75 : 40,
+          alive: true
+        });
+      }
+
       for (let i = 0; i < 24; i++) {
         spawnPickup();
       }
     }
 
     function spawnPickup() {
-      const geo = new THREE.BoxGeometry(1.1, 0.7, 1.1);
-      const mat = new THREE.MeshStandardMaterial({ color: 0x52ff7f, emissive: 0x188038, emissiveIntensity: 0.5 });
-      const mesh = new THREE.Mesh(geo, mat);
-      const x = (Math.random() - 0.5) * 160;
-      const z = (Math.random() - 0.5) * 160;
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 0.7, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0x52ff7f, emissive: 0x188038, emissiveIntensity: 0.5 })
+      );
+      const x = (Math.random() - 0.5) * 150;
+      const z = (Math.random() - 0.5) * 150;
       mesh.position.set(x, 0.8, z);
       scene.add(mesh);
       pickups.push({ mesh, x, z });
@@ -634,6 +711,14 @@
       document.getElementById('boost-fill').style.width = Math.max(0, boost) + '%';
     }
 
+    function addWantedStarCheck() {
+      const nextWanted = Math.min(5, Math.floor(yen / 25000));
+      if (nextWanted > wanted) {
+        wanted = nextWanted;
+        showBanner(`★ ${wanted}-STAR WANTED — POLICE DO NOT CHASE`);
+      }
+    }
+
     // UI Events
     document.querySelectorAll('.mech-card').forEach(card => {
       card.addEventListener('click', () => {
@@ -651,11 +736,13 @@
       wanted = 0;
       hp = 100;
       boost = 100;
+      camYaw = 0;
+      manualYawOffset = 0;
       mechaGroup.position.set(0, 0, 0);
       mechaGroup.rotation.y = 0;
-      populateCity();
+      populateWorld();
       updateHUD();
-      showBanner('WALK AROUND THE 3D HOUSES — NO POLICE!');
+      showBanner('TURN AROUND ANYTIME • CARS & NON-CHASING POLICE SPAWNED');
       gameRunning = true;
     });
 
@@ -683,27 +770,59 @@
       joyY = dy / maxR;
     }
 
-    joyZone.addEventListener('touchstart', e => { e.preventDefault(); joyActive = true; updateJoy(e.touches[0].clientX, e.touches[0].clientY); });
-    joyZone.addEventListener('touchmove', e => { e.preventDefault(); if (joyActive) updateJoy(e.touches[0].clientX, e.touches[0].clientY); });
+    joyZone.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); joyActive = true; updateJoy(e.touches[0].clientX, e.touches[0].clientY); });
+    joyZone.addEventListener('touchmove', e => { e.preventDefault(); e.stopPropagation(); if (joyActive) updateJoy(e.touches[0].clientX, e.touches[0].clientY); });
     const endJoy = () => { joyActive = false; joyX = 0; joyY = 0; joyKnob.style.transform = 'translate(0px, 0px)'; };
     joyZone.addEventListener('touchend', endJoy);
     joyZone.addEventListener('touchcancel', endJoy);
-    joyZone.addEventListener('mousedown', e => { joyActive = true; updateJoy(e.clientX, e.clientY); });
+    joyZone.addEventListener('mousedown', e => { e.stopPropagation(); joyActive = true; updateJoy(e.clientX, e.clientY); });
     window.addEventListener('mousemove', e => { if (joyActive) updateJoy(e.clientX, e.clientY); });
     window.addEventListener('mouseup', endJoy);
+
+    // Drag anywhere else on canvas to orbit camera around mecha
+    let dragCam = false;
+    let lastDragX = 0;
+    renderer.domElement.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) {
+        dragCam = true;
+        lastDragX = e.touches[0].clientX;
+      }
+    });
+    renderer.domElement.addEventListener('touchmove', e => {
+      if (dragCam && e.touches.length === 1) {
+        const dx = e.touches[0].clientX - lastDragX;
+        lastDragX = e.touches[0].clientX;
+        manualYawOffset -= dx * 0.012;
+      }
+    });
+    renderer.domElement.addEventListener('touchend', () => { dragCam = false; });
+
+    renderer.domElement.addEventListener('mousedown', e => {
+      dragCam = true;
+      lastDragX = e.clientX;
+    });
+    window.addEventListener('mousemove', e => {
+      if (dragCam && !joyActive) {
+        const dx = e.clientX - lastDragX;
+        lastDragX = e.clientX;
+        manualYawOffset -= dx * 0.01;
+      }
+    });
+    window.addEventListener('mouseup', () => { dragCam = false; });
 
     // Buttons & Keys
     const bindHold = (id, setter) => {
       const el = document.getElementById(id);
-      el.addEventListener('touchstart', e => { e.preventDefault(); setter(true); });
+      el.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); setter(true); });
       el.addEventListener('touchend', () => setter(false));
-      el.addEventListener('mousedown', () => setter(true));
+      el.addEventListener('mousedown', e => { e.stopPropagation(); setter(true); });
       el.addEventListener('mouseup', () => setter(false));
     };
     bindHold('btn-fire', v => { isFiring = v; });
     bindHold('btn-boost', v => { isBoosting = v; });
 
-    document.getElementById('btn-swap').addEventListener('click', () => {
+    document.getElementById('btn-swap').addEventListener('click', e => {
+      e.stopPropagation();
       selectedMech = (selectedMech + 1) % MECHAS.length;
       buildMecha();
       showBanner(`SWAPPED TO ${MECHAS[selectedMech].name}`);
@@ -727,23 +846,23 @@
       if (!isFiring || now - lastShot < preset.fireRate) return;
       lastShot = now;
 
-      const geo = new THREE.SphereGeometry(0.32, 8, 8);
-      const mat = new THREE.MeshBasicMaterial({ color: preset.accent });
-      const mesh = new THREE.Mesh(geo, mat);
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.32, 8, 8),
+        new THREE.MeshBasicMaterial({ color: preset.accent })
+      );
 
       const dir = new THREE.Vector3(Math.sin(mechaGroup.rotation.y), 0, Math.cos(mechaGroup.rotation.y)).normalize();
       mesh.position.copy(mechaGroup.position).add(new THREE.Vector3(0, 2.5, 0)).addScaledVector(dir, 1.4);
       scene.add(mesh);
 
-      projectiles.push({ mesh, vel: dir.multiplyScalar(42), life: 1.2 });
+      projectiles.push({ mesh, vel: dir.multiplyScalar(44), life: 1.2 });
     }
 
-    function addWantedStarCheck() {
-      const nextWanted = Math.min(5, Math.floor(yen / 25000));
-      if (nextWanted > wanted) {
-        wanted = nextWanted;
-        showBanner(`★ ${wanted}-STAR WANTED (NO POLICE CHASE)`);
-      }
+    function shortestAngleDiff(a, b) {
+      let diff = b - a;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      return diff;
     }
 
     let prevTime = performance.now();
@@ -754,17 +873,17 @@
 
       if (gameRunning) {
         const preset = MECHAS[selectedMech];
-        let moveX = joyX;
-        let moveZ = joyY;
-        if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
-        if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
-        if (keys['KeyW'] || keys['ArrowUp']) moveZ -= 1;
-        if (keys['KeyS'] || keys['ArrowDown']) moveZ += 1;
+        let inX = joyX;
+        let inY = joyY;
+        if (keys['KeyA'] || keys['ArrowLeft']) inX -= 1;
+        if (keys['KeyD'] || keys['ArrowRight']) inX += 1;
+        if (keys['KeyW'] || keys['ArrowUp']) inY -= 1;
+        if (keys['KeyS'] || keys['ArrowDown']) inY += 1;
 
-        const len = Math.hypot(moveX, moveZ);
+        const len = Math.hypot(inX, inY);
         if (len > 0.05) {
-          const nx = moveX / Math.max(1, len);
-          const nz = moveZ / Math.max(1, len);
+          const nx = inX / Math.max(1, len);
+          const nz = inY / Math.max(1, len);
 
           const sprinting = isBoosting && boost > 2;
           if (sprinting) {
@@ -777,8 +896,13 @@
           mechaGroup.position.x = Math.max(-105, Math.min(105, mechaGroup.position.x + nx * spd * dt));
           mechaGroup.position.z = Math.max(-105, Math.min(105, mechaGroup.position.z + nz * spd * dt));
 
-          const targetAngle = Math.atan2(nx, nz);
-          mechaGroup.rotation.y = targetAngle;
+          // Turn mecha smoothly to face movement direction (including turning around 180 deg)
+          const targetFacing = Math.atan2(nx, nz);
+          mechaGroup.rotation.y += shortestAngleDiff(mechaGroup.rotation.y, targetFacing) * Math.min(1, dt * 12);
+
+          // Swing camera behind movement direction so you can see where you're going when turning back
+          manualYawOffset *= Math.pow(0.2, dt);
+          camYaw += shortestAngleDiff(camYaw, targetFacing + manualYawOffset) * Math.min(1, dt * 4.5);
 
           walkCycle += dt * (sprinting ? 18 : 11);
           leftLeg.rotation.x = Math.sin(walkCycle) * 0.65;
@@ -791,7 +915,7 @@
           mechaGroup.position.y *= 0.8;
         }
 
-        // Prevent walking straight through intact houses
+        // Collide with intact houses
         for (const h of houses) {
           if (!h.intact) continue;
           const dx = mechaGroup.position.x - h.x;
@@ -801,6 +925,26 @@
           if (dist < minDist && dist > 0.001) {
             mechaGroup.position.x = h.x + (dx / dist) * minDist;
             mechaGroup.position.z = h.z + (dz / dist) * minDist;
+          }
+        }
+
+        // Move civilian cars & non-chasing police cars along streets
+        const flashOn = Math.floor(now / 180) % 2 === 0;
+        for (const v of vehicles) {
+          if (!v.alive) continue;
+          if (v.alongX) {
+            v.car.position.x += v.dir * v.speed * dt;
+            if (v.car.position.x > 105) v.car.position.x = -105;
+            if (v.car.position.x < -105) v.car.position.x = 105;
+          } else {
+            v.car.position.z += v.dir * v.speed * dt;
+            if (v.car.position.z > 105) v.car.position.z = -105;
+            if (v.car.position.z < -105) v.car.position.z = 105;
+          }
+
+          if (v.isPolice && v.sirenA && v.sirenB) {
+            v.sirenA.material.color.setHex(flashOn ? 0xff1e56 : 0x330010);
+            v.sirenB.material.color.setHex(flashOn ? 0x002244 : 0x00f0ff);
           }
         }
 
@@ -820,7 +964,7 @@
 
         fireBlast(now);
 
-        // Update projectiles
+        // Update projectiles against houses & vehicles
         for (let i = projectiles.length - 1; i >= 0; i--) {
           const b = projectiles[i];
           b.mesh.position.addScaledVector(b.vel, dt);
@@ -843,22 +987,40 @@
             }
           }
 
+          if (!hit) {
+            for (const v of vehicles) {
+              if (!v.alive) continue;
+              if (Math.hypot(b.mesh.position.x - v.car.position.x, b.mesh.position.z - v.car.position.z) < 2.3 && b.mesh.position.y < 3.5) {
+                v.hp -= 30;
+                hit = true;
+                if (v.hp <= 0) {
+                  v.alive = false;
+                  v.car.scale.set(1, 0.25, 1);
+                  yen += v.isPolice ? 15000 : 8000;
+                  addWantedStarCheck();
+                  updateHUD();
+                }
+                break;
+              }
+            }
+          }
+
           if (hit || b.life <= 0) {
             scene.remove(b.mesh);
             projectiles.splice(i, 1);
           }
         }
 
-        // Smooth 3rd-person follow camera
+        // Orbiting 3rd-person camera behind mecha's facing/travel direction
+        const camDist = 13.5;
         const desiredCam = new THREE.Vector3(
-          mechaGroup.position.x,
+          mechaGroup.position.x - Math.sin(camYaw) * camDist,
           mechaGroup.position.y + 8.5,
-          mechaGroup.position.z + 13.5
+          mechaGroup.position.z - Math.cos(camYaw) * camDist
         );
-        camera.position.lerp(desiredCam, 0.1);
-        camera.lookAt(mechaGroup.position.x, mechaGroup.position.y + 2.2, mechaGroup.position.z - 2);
+        camera.position.lerp(desiredCam, 0.12);
+        camera.lookAt(mechaGroup.position.x, mechaGroup.position.y + 2.2, mechaGroup.position.z);
       } else {
-        // Gentle orbital preview on splash screen
         camera.position.set(Math.sin(now * 0.0004) * 18, 11, Math.cos(now * 0.0004) * 18);
         camera.lookAt(0, 2, 0);
       }
@@ -866,7 +1028,7 @@
       renderer.render(scene, camera);
     }
 
-    populateCity();
+    populateWorld();
     requestAnimationFrame(animate);
   </script>
 </body>
