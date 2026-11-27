@@ -1,142 +1,173 @@
-DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MECHA CITY – GTA6 Style Sandbox</title>
+<title>MECHA CITY – Mobile Sandbox</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-  body{margin:0;overflow:hidden;font-family:sans-serif}
-  #hud{position:absolute;top:20px;left:20px;color:white;text-shadow:0 0 4px #000}
-  #wanted{font-size:32px}
+  body{margin:0;overflow:hidden;font-family:sans-serif;background:#000}
+  #hud{position:absolute;top:10px;left:10px;color:#0f0;text-shadow:0 0 6px #000;font-size:18px}
+  #wanted{font-size:28px}
+  #joystick{position:absolute;bottom:30px;left:30px;width:120px;height:120px;background:rgba(255,255,255,0.15);border-radius:50%;touch-action:none}
+  #punch{position:absolute;bottom:50px;right:40px;width:80px;height:80px;background:rgba(255,0,80,0.7);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;touch-action:none}
+  canvas{display:block}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="hud">
   <div id="wanted">★☆☆☆☆</div>
-  <div id="info">WASD move • Space jump • Mouse look • E punch</div>
+  <div id="info">Drag joystick • Tap PUNCH</div>
 </div>
+
+<div id="joystick"></div>
+<div id="punch">PUNCH</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ---------- THREE.JS SETUP ----------
+// ---------- THREE SETUP ----------
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('c'), antialias:true});
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 500);
+const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'), antialias:true, alpha:true});
 renderer.setSize(innerWidth, innerHeight);
-window.onresize = () => {
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-};
+window.onresize = () => { camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); };
 
-// ---------- LIGHT ----------
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-dir.position.set(50,100,50);
-scene.add(dir);
+// Light
+scene.add(new THREE.AmbientLight(0xffffff,0.7));
+const sun = new THREE.DirectionalLight(0xffffff,0.9);
+sun.position.set(50,80,30); scene.add(sun);
 
-// ---------- CITY (medium scale) ----------
-const cityMat = new THREE.MeshLambertMaterial({color:0x555555});
-const buildingGeo = new THREE.BoxGeometry(8,20,8);
-for(let x=-40;x<=40;x+=16){
-  for(let z=-40;z<=40;z+=16){
-    if(Math.random()<0.6){
-      const h = 15+Math.random()*25;
-      const b = new THREE.Mesh(buildingGeo, cityMat);
-      b.position.set(x,h/2,z);
-      b.scale.y = h/20;
+// ---------- CITY MODELS (simple but cooler) ----------
+const matBuilding = new THREE.MeshLambertMaterial({color:0x334455});
+const matRoof   = new THREE.MeshLambertMaterial({color:0x112233});
+
+function createBuilding(w,h,d){
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), matBuilding);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(w*1.05,1,d*1.05), matRoof);
+  roof.position.y = h/2 + 0.5;
+  g.add(body, roof);
+  return g;
+}
+
+for(let x=-60;x<=60;x+=18){
+  for(let z=-60;z<=60;z+=18){
+    if(Math.random()<0.65){
+      const h = 12 + Math.random()*30;
+      const b = createBuilding(9,h,9);
+      b.position.set(x, h/2, z);
       scene.add(b);
     }
   }
 }
 
-// ---------- MECHA (simple anime style) ----------
+// ---------- MECHA MODEL (anime style) ----------
 const mecha = new THREE.Group();
-const torso = new THREE.Mesh(new THREE.BoxGeometry(3,5,2), new THREE.MeshLambertMaterial({color:0xff3366}));
-const head  = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshLambertMaterial({color:0x222222}));
-head.position.y = 4;
-mecha.add(torso, head);
-scene.add(mecha);
-camera.position.set(0,12,-20);
-camera.lookAt(mecha.position);
 
-// ---------- CONTROLS ----------
-let keys={}, yaw=0, pitch=0;
-document.onkeydown = e=>keys[e.key.toLowerCase()]=true;
-document.onkeyup   = e=>keys[e.key.toLowerCase()]=false;
-let mouseDown=false;
-document.onmousedown = ()=>{mouseDown=true; document.body.requestPointerLock();};
-document.onmouseup   = ()=>mouseDown=false;
-document.onmousemove = e=>{
-  if(!mouseDown) return;
-  yaw   -= e.movementX*0.002;
-  pitch  = Math.max(-1.2, Math.min(1.2, pitch - e.movementY*0.002));
-};
+// torso
+const torso = new THREE.Mesh(new THREE.BoxGeometry(3.2,5.5,2.5), new THREE.MeshLambertMaterial({color:0xff2255}));
+mecha.add(torso);
+
+// head
+const head = new THREE.Mesh(new THREE.BoxGeometry(2.4,2.4,2.4), new THREE.MeshLambertMaterial({color:0x222222}));
+head.position.y = 4.5; mecha.add(head);
+
+// shoulders
+const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(1.8,1.2,2.8), new THREE.MeshLambertMaterial({color:0x444444}));
+shoulderL.position.set(-2.8,2.5,0); mecha.add(shoulderL);
+const shoulderR = shoulderL.clone(); shoulderR.position.x = 2.8; mecha.add(shoulderR);
+
+// arms
+const armL = new THREE.Mesh(new THREE.BoxGeometry(1.4,5,1.4), new THREE.MeshLambertMaterial({color:0xff4488}));
+armL.position.set(-3.5,-1,0); mecha.add(armL);
+const armR = armL.clone(); armR.position.x = 3.5; mecha.add(armR);
+
+// legs
+const legL = new THREE.Mesh(new THREE.BoxGeometry(1.6,4.5,1.8), new THREE.MeshLambertMaterial({color:0x333333}));
+legL.position.set(-1.2,-5,0); mecha.add(legL);
+const legR = legL.clone(); legR.position.x = 1.2; mecha.add(legR);
+
+scene.add(mecha);
+camera.position.set(0,18,-22);
 
 // ---------- WANTED SYSTEM ----------
 let stars = 0;
 const wantedEl = document.getElementById('wanted');
-function updateWanted(newStars){
-  stars = Math.min(5, newStars);
+function setStars(n){
+  stars = Math.max(0, Math.min(5, n));
   wantedEl.innerHTML = '★'.repeat(stars) + '☆'.repeat(5-stars);
 }
+function addHeat(v){ setStars(stars+v); setTimeout(()=>setStars(stars-1),7000); }
 
-// simple heat: punching buildings raises heat
-function addHeat(amount){
-  updateWanted(Math.ceil(stars + amount));
-  setTimeout(()=>updateWanted(Math.max(0,stars-1)), 8000);
-}
+// ---------- MOBILE JOYSTICK ----------
+const joy = document.getElementById('joystick');
+let joyActive = false, joyStart = {x:0,y:0}, joyVec = {x:0,y:0};
 
-// ---------- ANIMATION LOOP ----------
+joy.addEventListener('touchstart', e=>{
+  joyActive = true;
+  const t = e.touches[0];
+  joyStart = {x:t.clientX, y:t.clientY};
+});
+joy.addEventListener('touchmove', e=>{
+  if(!joyActive) return;
+  const t = e.touches[0];
+  joyVec.x = (t.clientX - joyStart.x) / 60;
+  joyVec.y = (t.clientY - joyStart.y) / 60;
+});
+joy.addEventListener('touchend', ()=>{joyActive=false; joyVec={x:0,y:0};});
+
+// ---------- PUNCH BUTTON ----------
+const punchBtn = document.getElementById('punch');
+punchBtn.addEventListener('touchstart', ()=>{
+  // punch animation
+  const origZ = mecha.position.z;
+  mecha.position.z -= 3;
+  setTimeout(()=>mecha.position.z = origZ, 120);
+
+  // hit buildings
+  scene.children.forEach(obj=>{
+    if(obj.geometry && obj.position.distanceTo(mecha.position)<14){
+      scene.remove(obj);
+      addHeat(1);
+    }
+  });
+});
+
+// ---------- TOUCH LOOK ----------
+let lastTouchX = 0;
+let yaw = 0, pitch = 0.4;
+document.addEventListener('touchstart', e=>{
+  lastTouchX = e.touches[0].clientX;
+});
+document.addEventListener('touchmove', e=>{
+  const dx = e.touches[0].clientX - lastTouchX;
+  yaw -= dx * 0.006;
+  lastTouchX = e.touches[0].clientX;
+});
+
+// ---------- GAME LOOP ----------
 const clock = new THREE.Clock();
 function animate(){
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
 
-  // movement
-  const speed = 18;
-  if(keys['w']) mecha.position.z -= Math.cos(yaw)*speed*dt;
-  if(keys['s']) mecha.position.z += Math.cos(yaw)*speed*dt;
-  if(keys['a']) mecha.position.x -= Math.sin(yaw)*speed*dt;
-  if(keys['d']) mecha.position.x += Math.sin(yaw)*speed*dt;
-  if(keys[' ']) mecha.position.y = Math.min(mecha.position.y+25*dt, 25);
-  else mecha.position.y = Math.max(mecha.position.y-30*dt, 0);
+  // movement from joystick
+  const speed = 22;
+  if(joyActive){
+    mecha.position.x += Math.sin(yaw) * joyVec.x * speed * dt;
+    mecha.position.z += Math.cos(yaw) * joyVec.y * speed * dt;
+  }
 
   mecha.rotation.y = yaw;
 
   // camera follow
-  const camOffset = new THREE.Vector3(0,12,-22).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
-  camera.position.lerp(mecha.position.clone().add(camOffset), 0.1);
-  camera.lookAt(mecha.position.x, mecha.position.y+6, mecha.position.z);
-
-  // punch (E)
-  if(keys['e']){
-    keys['e']=false;
-    // simple hit test
-    scene.children.forEach(obj=>{
-      if(obj.geometry && obj.position.distanceTo(mecha.position)<12){
-        scene.remove(obj);
-        addHeat(1);
-      }
-    });
-  }
+  const camOff = new THREE.Vector3(0,15,-20).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+  camera.position.lerp(mecha.position.clone().add(camOff), 0.15);
+  camera.lookAt(mecha.position.x, mecha.position.y+7, mecha.position.z);
 
   renderer.render(scene, camera);
 }
 animate();
-
-// ---------- TOUCH / MOBILE ----------
-let touchStartX=0;
-document.addEventListener('touchstart',e=>{
-  touchStartX = e.touches[0].clientX;
-});
-document.addEventListener('touchmove',e=>{
-  const dx = e.touches[0].clientX - touchStartX;
-  yaw -= dx*0.005;
-  touchStartX = e.touches[0].clientX;
-});
 </script>
 </body>
 </html>
-html
-Copy
