@@ -1,1102 +1,355 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>GRAND MECHA AUTO VI: 3D HOUSE CITY V3</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Noto+Sans+JP:wght@700;900&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRON HORIZON: Mech City</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #07080d;
+    --panel: #0f1220;
+    --neon: #00f0ff;
+    --hot: #ff2e88;
+    --gold: #ffc53d;
+    --text: #e8ecf5;
+    --muted: #8a93a8;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
 
-    * {
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: none;
-      margin: 0;
-      padding: 0;
-    }
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px;
+    background: rgba(7,8,13,0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(0,240,255,0.15);
+  }
+  .logo { font-weight: 900; letter-spacing: 2px; color: var(--neon); font-size: 1rem; }
+  nav a {
+    color: var(--text); text-decoration: none; font-size: 0.8rem;
+    margin-left: 14px; opacity: 0.8;
+  }
+  nav a:hover { opacity: 1; color: var(--neon); }
 
-    body {
-      background: #070510;
-      color: #fff;
-      font-family: 'Chakra Petch', 'Noto Sans JP', sans-serif;
-      overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 90px 20px 60px;
+    position: relative;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255,46,136,0.25), transparent 45%),
+      radial-gradient(circle at 80% 70%, rgba(0,240,255,0.25), transparent 45%),
+      linear-gradient(180deg, #07080d, #0b0e1a 60%, #07080d);
+    overflow: hidden;
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,240,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,240,255,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: drift 20s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes drift { to { background-position: 40px 40px; } }
+  .hero h1 {
+    font-size: clamp(2.2rem, 9vw, 5rem);
+    font-weight: 900; letter-spacing: 3px; line-height: 1.05;
+    background: linear-gradient(90deg, var(--neon), #fff, var(--hot));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: glow 3s ease-in-out infinite alternate;
+    position: relative;
+  }
+  @keyframes glow {
+    from { filter: drop-shadow(0 0 4px rgba(0,240,255,0.4)); }
+    to   { filter: drop-shadow(0 0 16px rgba(255,46,136,0.6)); }
+  }
+  .hero p.tag {
+    margin: 14px 0 26px; color: var(--muted);
+    max-width: 520px; font-size: 1rem; position: relative;
+  }
 
-    #phone-frame {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      max-width: 460px;
-      max-height: 920px;
-      background: #0b0718;
-      overflow: hidden;
-      box-shadow: 0 0 60px rgba(255, 0, 128, 0.35), 0 0 120px rgba(0, 240, 255, 0.2);
-      border: 2px solid rgba(255, 255, 255, 0.12);
-    }
+  .countdown {
+    display: flex; gap: 10px; justify-content: center; margin-bottom: 28px;
+    position: relative;
+  }
+  .countdown div {
+    background: var(--panel); border: 1px solid rgba(0,240,255,0.25);
+    border-radius: 10px; padding: 10px 12px; min-width: 64px;
+  }
+  .countdown span { display: block; font-size: 1.5rem; font-weight: 800; color: var(--neon); }
+  .countdown small { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    @media (min-width: 500px) {
-      #phone-frame {
-        height: 94vh;
-        border-radius: 34px;
-        border: 4px solid #231b3d;
-      }
-    }
+  .btn {
+    display: inline-block; border: none; cursor: pointer;
+    padding: 14px 28px; border-radius: 999px;
+    font-weight: 800; font-size: 0.95rem; letter-spacing: 1px;
+    text-decoration: none; color: #07080d;
+    background: linear-gradient(90deg, var(--neon), var(--hot));
+    box-shadow: 0 0 20px rgba(0,240,255,0.35);
+    transition: transform 0.15s ease;
+    position: relative;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn.ghost {
+    background: transparent; color: var(--neon);
+    border: 1px solid var(--neon); box-shadow: none; margin-left: 10px;
+  }
 
-    #canvas-host {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-    }
+  /* SECTIONS */
+  section { padding: 70px 18px; max-width: 1000px; margin: 0 auto; }
+  h2 {
+    font-size: 1.8rem; font-weight: 900; text-align: center;
+    letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .sub { text-align: center; color: var(--muted); margin-bottom: 34px; font-size: 0.95rem; }
 
-    #splash-screen {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 50% 25%, #3a0d4e 0%, #0d061f 65%, #05020c 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      padding: 26px 20px;
-      z-index: 30;
-      text-align: center;
-    }
+  /* FEATURES */
+  .grid {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  .card {
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px; padding: 22px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover, .card:active { border-color: var(--neon); transform: translateY(-3px); }
+  .card .icon { font-size: 1.8rem; margin-bottom: 10px; }
+  .card h3 { font-size: 1.05rem; margin-bottom: 6px; color: var(--neon); }
+  .card p { color: var(--muted); font-size: 0.9rem; }
 
-    .bootleg-badge {
-      background: linear-gradient(90deg, #ff007f, #ffae00);
-      color: #000;
-      font-weight: 900;
-      font-size: 11px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-    }
+  /* MECH SELECTOR */
+  .mech-wrap {
+    background: var(--panel); border-radius: 18px; padding: 22px;
+    border: 1px solid rgba(255,46,136,0.25);
+  }
+  .mech-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 18px; }
+  .mech-tabs button {
+    flex: 1 0 auto; background: #171b2e; color: var(--text);
+    border: 1px solid transparent; border-radius: 10px;
+    padding: 10px 14px; font-weight: 700; cursor: pointer; font-size: 0.85rem;
+  }
+  .mech-tabs button.active { border-color: var(--hot); color: var(--hot); }
+  .mech-display {
+    text-align: center; font-size: 5.5rem; padding: 18px 0;
+    animation: bob 3s ease-in-out infinite;
+  }
+  @keyframes bob { 50% { transform: translateY(-8px); } }
+  .mech-name { text-align: center; font-size: 1.4rem; font-weight: 900; color: var(--hot); }
+  .mech-class { text-align: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; }
+  .mech-desc { text-align: center; font-size: 0.9rem; margin-bottom: 18px; color: #c4cbdc; }
+  .stat { margin-bottom: 10px; }
+  .stat-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; }
+  .bar { height: 10px; background: #1b2034; border-radius: 6px; overflow: hidden; }
+  .fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--neon), var(--hot));
+    border-radius: 6px; transition: width 0.6s ease;
+  }
 
-    .title-jp {
-      font-family: 'Noto Sans JP', sans-serif;
-      font-size: 14px;
-      color: #00f0ff;
-      letter-spacing: 4px;
-    }
+  /* WISHLIST */
+  .wishlist { text-align: center; background: linear-gradient(135deg, #111628, #1a0f1f); }
+  .wishlist form { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  .wishlist input {
+    flex: 1 1 220px; max-width: 320px; padding: 14px 16px;
+    border-radius: 999px; border: 1px solid rgba(0,240,255,0.3);
+    background: #07080d; color: var(--text); font-size: 0.95rem; outline: none;
+  }
+  .wishlist input:focus { border-color: var(--neon); }
+  .price-tag { color: var(--gold); font-weight: 800; margin-top: 12px; font-size: 0.9rem; }
 
-    .title-main {
-      font-size: 38px;
-      line-height: 0.92;
-      font-weight: 700;
-      font-style: italic;
-      text-transform: uppercase;
-      background: linear-gradient(180deg, #ffffff 15%, #ff6ec7 55%, #ff007f 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin: 6px 0;
-    }
+  footer {
+    text-align: center; padding: 30px 16px 40px;
+    color: var(--muted); font-size: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
 
-    .title-vi {
-      font-size: 54px;
-      font-weight: 900;
-      font-style: italic;
-      line-height: 0.85;
-      background: linear-gradient(135deg, #ffe600 0%, #ff5e00 50%, #ff0080 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: var(--neon); color: #07080d; font-weight: 800;
+    padding: 12px 22px; border-radius: 999px;
+    transition: transform 0.35s ease; z-index: 200;
+    font-size: 0.9rem; max-width: 90vw; text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
 
-    .sub-edition {
-      font-size: 12px;
-      color: #ffd6f6;
-      letter-spacing: 1.8px;
-      margin-top: 6px;
-    }
-
-    .mech-selector {
-      width: 100%;
-      background: rgba(14, 10, 32, 0.85);
-      border: 1px solid rgba(0, 240, 255, 0.35);
-      border-radius: 16px;
-      padding: 12px;
-    }
-
-    .mech-selector-label {
-      font-size: 11px;
-      color: #00f0ff;
-      letter-spacing: 1.5px;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-
-    .mech-cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .mech-card {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1.5px solid rgba(255, 255, 255, 0.15);
-      border-radius: 10px;
-      padding: 8px 4px;
-      cursor: pointer;
-    }
-
-    .mech-card.active {
-      border-color: #ff007f;
-      background: rgba(255, 0, 127, 0.22);
-      box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
-    }
-
-    .mech-card .code {
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .mech-card .role {
-      font-size: 10px;
-      color: #a9b4d0;
-      margin-top: 2px;
-    }
-
-    #start-btn {
-      width: 100%;
-      padding: 15px;
-      border: none;
-      border-radius: 14px;
-      background: linear-gradient(90deg, #ff007f, #ff6a00);
-      color: #fff;
-      font-family: inherit;
-      font-size: 19px;
-      font-weight: 700;
-      font-style: italic;
-      letter-spacing: 1.5px;
-      cursor: pointer;
-    }
-
-    .fake-store-note {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    #hud {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 10;
-      display: none;
-    }
-
-    .hud-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 14px 14px 0;
-    }
-
-    .peace-tag {
-      background: rgba(10, 18, 30, 0.82);
-      border: 1px solid rgba(0, 240, 255, 0.45);
-      border-radius: 12px;
-      padding: 8px 11px;
-      font-size: 11px;
-      color: #9ceeff;
-      line-height: 1.35;
-    }
-
-    .peace-tag strong {
-      color: #52ff7f;
-      display: block;
-      font-size: 12px;
-    }
-
-    .gta-stats {
-      text-align: right;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
-    }
-
-    .wanted-stars {
-      font-size: 18px;
-      letter-spacing: 2px;
-      text-shadow: 0 2px 4px #000;
-    }
-
-    .star-on {
-      color: #ffe600;
-      filter: drop-shadow(0 0 6px #ff9900);
-    }
-
-    .star-off {
-      color: rgba(255, 255, 255, 0.22);
-    }
-
-    .money-display {
-      font-size: 22px;
-      font-weight: 700;
-      color: #52ff7f;
-      text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
-    }
-
-    .bars-row {
-      display: flex;
-      gap: 6px;
-      width: 138px;
-    }
-
-    .bar-bg {
-      flex: 1;
-      height: 8px;
-      background: rgba(0, 0, 0, 0.75);
-      border: 1.5px solid #000;
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    #hp-fill {
-      width: 100%;
-      height: 100%;
-      background: #4cd964;
-    }
-
-    #boost-fill {
-      width: 100%;
-      height: 100%;
-      background: #00d2ff;
-    }
-
-    #event-banner {
-      position: absolute;
-      top: 104px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(10, 6, 24, 0.85);
-      border: 1px solid rgba(255, 0, 127, 0.65);
-      padding: 5px 14px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      color: #ffe600;
-      white-space: nowrap;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      opacity: 0;
-      transition: opacity 0.25s;
-    }
-
-    .touch-controls {
-      position: absolute;
-      bottom: 18px;
-      left: 0;
-      right: 0;
-      padding: 0 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      pointer-events: auto;
-    }
-
-    .joystick-zone {
-      width: 118px;
-      height: 118px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      border: 2px solid rgba(0, 240, 255, 0.4);
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    #joystick-knob {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #00f0ff, #0066ff);
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
-      position: absolute;
-    }
-
-    .action-cluster {
-      display: grid;
-      grid-template-columns: repeat(2, 62px);
-      gap: 10px;
-      align-items: center;
-    }
-
-    .action-btn {
-      width: 62px;
-      height: 62px;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.35);
-      color: #fff;
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 11px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-    }
-
-    .action-btn:active {
-      transform: scale(0.91);
-    }
-
-    #btn-fire {
-      background: radial-gradient(circle, #ff2a6d, #990033);
-      border-color: #ff7aa2;
-      grid-column: 2;
-      width: 72px;
-      height: 72px;
-      font-size: 13px;
-    }
-
-    #btn-boost {
-      background: radial-gradient(circle, #00d2ff, #0051a8);
-      border-color: #8ceaff;
-    }
-
-    #btn-swap {
-      background: radial-gradient(circle, #ffae00, #995200);
-      border-color: #ffe082;
-      font-size: 10px;
-    }
-  </style>
+  /* MOBILE */
+  @media (max-width: 600px) {
+    nav a { display: none; }
+    nav a:first-of-type { display: inline; }
+    .btn.ghost { margin-left: 0; margin-top: 10px; }
+    .mech-display { font-size: 4.5rem; }
+    .countdown div { min-width: 56px; padding: 8px; }
+    .countdown span { font-size: 1.2rem; }
+  }
+</style>
 </head>
 <body>
-  <div id="phone-frame">
-    <div id="canvas-host"></div>
 
-    <div id="splash-screen">
-      <div class="bootleg-badge">★ 3D HOUSE CITY • ONLINE TEXTURES + FREE LOOK ★</div>
-
-      <div>
-        <div class="title-jp">グランド・メカ・オート</div>
-        <div class="title-main">GRAND MECHA<br>AUTO</div>
-        <div class="title-vi">VI</div>
-        <div class="sub-edition">3D HOUSE NEIGHBORHOOD EDITION V3</div>
-      </div>
-
-      <div class="mech-selector">
-        <div class="mech-selector-label">Choose Your Walking Mecha</div>
-        <div class="mech-cards">
-          <div class="mech-card active" data-mech="0">
-            <div class="code">RX-06 RONIN</div>
-            <div class="role">Balanced Walker</div>
-          </div>
-          <div class="mech-card" data-mech="1">
-            <div class="code">MZ-99 KAIJU</div>
-            <div class="role">Heavy Smasher</div>
-          </div>
-          <div class="mech-card" data-mech="2">
-            <div class="code">AE-86 DRIFT</div>
-            <div class="role">Fast Sprinter</div>
-          </div>
-        </div>
-      </div>
-
-      <button id="start-btn">WALK IN 3D CITY</button>
-      <div class="fake-store-note">Stick / WASD to Walk • Drag Anywhere to Look 360° • Space = Blast</div>
-    </div>
-
-    <div id="hud">
-      <div class="hud-top">
-        <div class="peace-tag">
-          <strong>FREE 360° LOOK</strong>
-          Drag Screen to Aim/Look<br>Police Never Chase
-        </div>
-        <div class="gta-stats">
-          <div class="wanted-stars" id="stars-box">
-            <span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span>
-          </div>
-          <div class="money-display" id="yen-box">¥0</div>
-          <div class="bars-row">
-            <div class="bar-bg"><div id="hp-fill"></div></div>
-            <div class="bar-bg"><div id="boost-fill"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="event-banner">WANTED LEVEL UP</div>
-
-      <div class="touch-controls">
-        <div class="joystick-zone" id="joystick-zone">
-          <div id="joystick-knob"></div>
-        </div>
-        <div class="action-cluster">
-          <button class="action-btn" id="btn-swap">MECHA<br>SWAP</button>
-          <button class="action-btn" id="btn-boost">SPRINT</button>
-          <button class="action-btn" id="btn-fire">BLAST</button>
-        </div>
-      </div>
-    </div>
+<nav>
+  <div class="logo">IRON HORIZON</div>
+  <div>
+    <a href="#features">Features</a>
+    <a href="#mechs">Mechs</a>
+    <a href="#wishlist">Wishlist</a>
   </div>
+</nav>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script>
-    const host = document.getElementById('canvas-host');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x140b2e);
-    scene.fog = new THREE.FogExp2(0x140b2e, 0.009);
+<header class="hero">
+  <h1>IRON HORIZON</h1>
+  <p class="tag">Pilot colossal mechs across a living, sprawling megacity. Drop in, customize your machine, and make your own story in the neon ruins of the coast.</p>
+  <div class="countdown" id="countdown">
+    <div><span id="d">00</span><small>Days</small></div>
+    <div><span id="h">00</span><small>Hrs</small></div>
+    <div><span id="m">00</span><small>Min</small></div>
+    <div><span id="s">00</span><small>Sec</small></div>
+  </div>
+  <div>
+    <a href="#wishlist" class="btn">Wishlist Now</a>
+    <a href="#mechs" class="btn ghost">Explore Mechs</a>
+  </div>
+</header>
 
-    const camera = new THREE.PerspectiveCamera(60, host.clientWidth / host.clientHeight, 0.1, 240);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(host.clientWidth, host.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    host.appendChild(renderer.domElement);
+<section id="features">
+  <h2>Built for Freedom</h2>
+  <p class="sub">A huge city, a real sense of scale, and total control over your machine.</p>
+  <div class="grid">
+    <div class="card"><div class="icon">🏙️</div><h3>Living Megacity</h3><p>Ten districts, from crowded harbour markets to ruined skyscrapers. Every street has its own rhythm.</p></div>
+    <div class="card"><div class="icon">🤖</div><h3>Full Mech Piloting</h3><p>Feel the weight of every step. Each mech handles differently, and momentum matters.</p></div>
+    <div class="card"><div class="icon">🔧</div><h3>Deep Customization</h3><p>Swap armour plating, thrusters, and weapon mounts. Your build shapes how you fight.</p></div>
+    <div class="card"><div class="icon">🌆</div><h3>Dynamic Missions</h3><p>Random events, rival pilots, and cargo runs keep the city unpredictable.</p></div>
+    <div class="card"><div class="icon">🎮</div><h3>Mobile Ready</h3><p>Touch controls are designed for both phones and consoles, with full cloud save support.</p></div>
+    <div class="card"><div class="icon">⚡</div><h3>Power Systems</h3><p>Manage reactor heat and energy reserves. Push too hard and your mech will overheat.</p></div>
+  </div>
+</section>
 
-    window.addEventListener('resize', () => {
-      camera.aspect = host.clientWidth / host.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(host.clientWidth, host.clientHeight);
+<section id="mechs">
+  <h2>Choose Your Machine</h2>
+  <p class="sub">Tap a chassis to compare its stats.</p>
+  <div class="mech-wrap">
+    <div class="mech-tabs" id="tabs"></div>
+    <div class="mech-display" id="mechIcon">🤖</div>
+    <div class="mech-name" id="mechName"></div>
+    <div class="mech-class" id="mechClass"></div>
+    <p class="mech-desc" id="mechDesc"></p>
+    <div id="stats"></div>
+  </div>
+</section>
+
+<section id="wishlist" class="wishlist">
+  <h2>Get Ready to Launch</h2>
+  <p class="sub">Join the wishlist to get launch news, pilot access, and early discounts.</p>
+  <form id="wishForm">
+    <input type="email" id="email" placeholder="your@email.com" required>
+    <button type="submit" class="btn">Join Wishlist</button>
+  </form>
+  <p class="price-tag">Pre-order bonus: Exclusive "Crimson Dawn" mech skin</p>
+</section>
+
+<footer>
+  <p>IRON HORIZON is a fictional concept page. All names, mechs, and features are original placeholders.</p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ----- COUNTDOWN (placeholder launch date) -----
+  const launchDate = new Date("2027-06-01T00:00:00");
+  function updateCountdown() {
+    const diff = launchDate - new Date();
+    if (diff <= 0) {
+      document.getElementById("countdown").innerHTML = "<div style='padding:14px 24px'><span style='font-size:1rem'>NOW PILOTABLE</span></div>";
+      return;
+    }
+    const pad = n => String(n).padStart(2, "0");
+    document.getElementById("d").textContent = pad(Math.floor(diff / 86400000));
+    document.getElementById("h").textContent = pad(Math.floor(diff / 3600000) % 24);
+    document.getElementById("m").textContent = pad(Math.floor(diff / 60000) % 60);
+    document.getElementById("s").textContent = pad(Math.floor(diff / 1000) % 60);
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // ----- MECH SELECTOR -----
+  const mechs = [
+    {
+      name: "Vanguard MK-I", icon: "🤖", cls: "All-Rounder",
+      desc: "A balanced chassis for new pilots. Reliable in every situation and easy to upgrade.",
+      stats: { Armour: 60, Speed: 55, Firepower: 65, Energy: 70 }
+    },
+    {
+      name: "Ravager X", icon: "🦾", cls: "Heavy Assault",
+      desc: "A slow, armoured tank with devastating cannons. Built to hold ground under fire.",
+      stats: { Armour: 95, Speed: 30, Firepower: 92, Energy: 45 }
+    },
+    {
+      name: "Strikeshade", icon: "🥷", cls: "Stealth Striker",
+      desc: "Lightweight and fast, with thrusters that carry it across rooftops in seconds.",
+      stats: { Armour: 35, Speed: 96, Firepower: 50, Energy: 80 }
+    }
+  ];
+
+  const tabs = document.getElementById("tabs");
+  mechs.forEach((mech, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = mech.name;
+    btn.onclick = () => selectMech(i);
+    tabs.appendChild(btn);
+  });
+
+  function selectMech(i) {
+    const mech = mechs[i];
+    [...tabs.children].forEach((b, idx) => b.classList.toggle("active", idx === i));
+    document.getElementById("mechIcon").textContent = mech.icon;
+    document.getElementById("mechName").textContent = mech.name;
+    document.getElementById("mechClass").textContent = mech.cls;
+    document.getElementById("mechDesc").textContent = mech.desc;
+
+    const statsDiv = document.getElementById("stats");
+    statsDiv.innerHTML = "";
+    Object.entries(mech.stats).forEach(([label, value]) => {
+      statsDiv.insertAdjacentHTML("beforeend", `
+        <div class="stat">
+          <div class="stat-label"><span>${label}</span><span>${value}</span></div>
+          <div class="bar"><div class="fill" style="width:0%"></div></div>
+        </div>`);
     });
-
-    // Lighting
-    const hemiLight = new THREE.HemisphereLight(0xffb6f9, 0x1b2447, 1.2);
-    scene.add(hemiLight);
-    const dirLight = new THREE.DirectionalLight(0x00f0ff, 0.95);
-    dirLight.position.set(25, 45, 20);
-    scene.add(dirLight);
-
-    // Load online art textures (with safe fallback if offline/blocked)
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin('anonymous');
-
-    function makeFallbackTex(bg, fg, label) {
-      const c = document.createElement('canvas');
-      c.width = 128; c.height = 128;
-      const g = c.getContext('2d');
-      g.fillStyle = bg; g.fillRect(0, 0, 128, 128);
-      g.strokeStyle = fg; g.lineWidth = 4;
-      g.strokeRect(6, 6, 116, 116);
-      g.fillStyle = fg; g.font = 'bold 18px sans-serif';
-      g.fillText(label, 18, 70);
-      const t = new THREE.CanvasTexture(c);
-      t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      return t;
-    }
-
-    const streetTex = loader.load(
-      'https://threejs.org/examples/textures/hardwood2_diffuse.jpg',
-      undefined,
-      undefined,
-      () => {}
-    );
-    streetTex.wrapS = streetTex.wrapT = THREE.RepeatWrapping;
-    streetTex.repeat.set(28, 28);
-
-    const houseWallTex = loader.load(
-      'https://threejs.org/examples/textures/brick_diffuse.jpg',
-      undefined,
-      undefined,
-      () => {}
-    );
-    houseWallTex.wrapS = houseWallTex.wrapT = THREE.RepeatWrapping;
-
-    const mechArmorTex = loader.load(
-      'https://threejs.org/examples/textures/uv_grid_opengl.jpg',
-      undefined,
-      undefined,
-      () => {}
-    );
-
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(240, 240),
-      new THREE.MeshStandardMaterial({ color: 0x222742, map: streetTex, roughness: 0.85 })
-    );
-    ground.rotation.x = -Math.PI / 2;
-    scene.add(ground);
-
-    const gridHelper = new THREE.GridHelper(240, 30, 0xff007f, 0x2d385c);
-    gridHelper.position.y = 0.02;
-    scene.add(gridHelper);
-
-    const MECHAS = [
-      { name: 'RX-06 RONIN', color: 0xff007f, accent: 0x00f0ff, speed: 13, fireRate: 150 },
-      { name: 'MZ-99 KAIJU', color: 0xff5e00, accent: 0xffe600, speed: 10.5, fireRate: 240 },
-      { name: 'AE-86 DRIFT', color: 0xf4f4f8, accent: 0xff1e56, speed: 16, fireRate: 120 }
-    ];
-
-    let selectedMech = 0;
-    let gameRunning = false;
-    let yen = 0;
-    let wanted = 0;
-    let hp = 100;
-    let boost = 100;
-    let isBoosting = false;
-    let isFiring = false;
-    let lastShot = 0;
-    let walkCycle = 0;
-
-    // Independent 360° Camera Look Angles (no auto-fight with joystick)
-    let lookYaw = 0;
-    let lookPitch = 0.42;
-
-    // Build Walking Mecha with online armor texture art
-    const mechaGroup = new THREE.Group();
-    const leftLeg = new THREE.Group();
-    const rightLeg = new THREE.Group();
-
-    function buildMecha() {
-      while (mechaGroup.children.length > 0) mechaGroup.remove(mechaGroup.children[0]);
-      leftLeg.clear();
-      rightLeg.clear();
-
-      const preset = MECHAS[selectedMech];
-      const torsoMat = new THREE.MeshStandardMaterial({
-        color: preset.color,
-        map: mechArmorTex,
-        roughness: 0.35,
-        metalness: 0.4
-      });
-      const accentMat = new THREE.MeshStandardMaterial({
-        color: preset.accent,
-        emissive: preset.accent,
-        emissiveIntensity: 0.35
-      });
-      const darkMat = new THREE.MeshStandardMaterial({ color: 0x1d2138, roughness: 0.6 });
-
-      const legGeo = new THREE.BoxGeometry(0.65, 1.5, 0.75);
-      const lMesh = new THREE.Mesh(legGeo, darkMat);
-      lMesh.position.y = -0.75;
-      leftLeg.add(lMesh);
-      leftLeg.position.set(-0.55, 1.5, 0);
-
-      const rMesh = new THREE.Mesh(legGeo, darkMat);
-      rMesh.position.y = -0.75;
-      rightLeg.add(rMesh);
-      rightLeg.position.set(0.55, 1.5, 0);
-
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.7, 1.2), torsoMat);
-      torso.position.y = 2.35;
-
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.8, 0.95), accentMat);
-      head.position.y = 3.6;
-
-      const visor = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 0.2), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-      visor.position.set(0, 3.65, 0.45);
-
-      const cannonL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 1.4), darkMat);
-      cannonL.position.set(-1.15, 2.7, 0.3);
-      const cannonR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 1.4), darkMat);
-      cannonR.position.set(1.15, 2.7, 0.3);
-
-      mechaGroup.add(leftLeg, rightLeg, torso, head, visor, cannonL, cannonR);
-    }
-
-    buildMecha();
-    scene.add(mechaGroup);
-
-    const houses = [];
-    const vehicles = [];
-    const pickups = [];
-    const projectiles = [];
-
-    const houseColors = [0xf7e1c6, 0xd8e2dc, 0xffe5d9, 0xcad2c5, 0xfde2e4, 0xfff1d0];
-    const roofColors = [0x3b4d7a, 0x8d3b3b, 0x2f4858, 0x5c4d7d];
-    const carColors = [0x00d2ff, 0xffbe0b, 0x8338ec, 0xfb5607, 0x3a86ff, 0xff006e];
-    const STREET_LINES = [-80, -64, -48, -32, -16, 0, 16, 32, 48, 64, 80];
-
-    function createCarMesh(isPolice, colorHex) {
-      const car = new THREE.Group();
-      const bodyMat = new THREE.MeshStandardMaterial({
-        color: isPolice ? 0x161b2e : colorHex,
-        map: mechArmorTex,
-        roughness: 0.4,
-        metalness: 0.3
-      });
-      const cabinMat = new THREE.MeshStandardMaterial({
-        color: isPolice ? 0xf8fafc : 0x232942,
-        roughness: 0.5
-      });
-
-      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.9, 4.2), bodyMat);
-      chassis.position.y = 0.65;
-
-      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 2.1), cabinMat);
-      cabin.position.set(0, 1.35, -0.2);
-
-      car.add(chassis, cabin);
-
-      let sirenA = null, sirenB = null;
-      if (isPolice) {
-        sirenA = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.25, 0.35), new THREE.MeshBasicMaterial({ color: 0xff1e56 }));
-        sirenA.position.set(-0.45, 1.8, -0.2);
-        sirenB = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.25, 0.35), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
-        sirenB.position.set(0.45, 1.8, -0.2);
-        car.add(sirenA, sirenB);
-      }
-
-      return { car, sirenA, sirenB };
-    }
-
-    function populateWorld() {
-      houses.forEach(h => scene.remove(h.mesh));
-      vehicles.forEach(v => scene.remove(v.car));
-      pickups.forEach(p => scene.remove(p.mesh));
-      houses.length = 0;
-      vehicles.length = 0;
-      pickups.length = 0;
-
-      for (let bx = -72; bx <= 72; bx += 16) {
-        for (let bz = -72; bz <= 72; bz += 16) {
-          if (Math.hypot(bx, bz) < 10) continue;
-          if (Math.random() < 0.14) continue;
-
-          const hGroup = new THREE.Group();
-          const w = 5.4 + Math.random() * 2.0;
-          const d = 5.4 + Math.random() * 2.0;
-          const h = 3.6 + Math.random() * 2.4;
-
-          const walls = new THREE.Mesh(
-            new THREE.BoxGeometry(w, h, d),
-            new THREE.MeshStandardMaterial({
-              color: houseColors[Math.floor(Math.random() * houseColors.length)],
-              map: houseWallTex,
-              roughness: 0.75
-            })
-          );
-          walls.position.y = h / 2;
-
-          const roof = new THREE.Mesh(
-            new THREE.ConeGeometry(Math.max(w, d) * 0.76, 2.2, 4),
-            new THREE.MeshStandardMaterial({ color: roofColors[Math.floor(Math.random() * roofColors.length)], roughness: 0.6 })
-          );
-          roof.position.y = h + 1.1;
-          roof.rotation.y = Math.PI / 4;
-
-          const win = new THREE.Mesh(
-            new THREE.BoxGeometry(1.1, 1.0, 0.15),
-            new THREE.MeshBasicMaterial({ color: 0xffe680 })
-          );
-          win.position.set(0, h * 0.55, d / 2 + 0.05);
-
-          hGroup.add(walls, roof, win);
-          hGroup.position.set(bx, 0, bz);
-          scene.add(hGroup);
-
-          houses.push({
-            mesh: hGroup,
-            x: bx,
-            z: bz,
-            radius: Math.max(w, d) * 0.52,
-            hp: 60,
-            intact: true
-          });
-        }
-      }
-
-      for (let i = 0; i < 22; i++) {
-        const isPolice = i % 3 === 0;
-        const alongX = i % 2 === 0;
-        const laneCoord = STREET_LINES[Math.floor(Math.random() * STREET_LINES.length)];
-        const dir = Math.random() < 0.5 ? 1 : -1;
-        const posAlong = (Math.random() - 0.5) * 160;
-
-        const { car, sirenA, sirenB } = createCarMesh(
-          isPolice,
-          carColors[Math.floor(Math.random() * carColors.length)]
-        );
-
-        const x = alongX ? posAlong : laneCoord;
-        const z = alongX ? laneCoord : posAlong;
-        car.position.set(x, 0, z);
-        car.rotation.y = alongX ? (dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (dir > 0 ? 0 : Math.PI);
-        scene.add(car);
-
-        vehicles.push({
-          car,
-          sirenA,
-          sirenB,
-          isPolice,
-          alongX,
-          dir,
-          speed: isPolice ? 9.5 : 8 + Math.random() * 5,
-          hp: isPolice ? 75 : 40,
-          alive: true
-        });
-      }
-
-      for (let i = 0; i < 24; i++) {
-        spawnPickup();
-      }
-    }
-
-    function spawnPickup() {
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(1.1, 0.7, 1.1),
-        new THREE.MeshStandardMaterial({ color: 0x52ff7f, emissive: 0x188038, emissiveIntensity: 0.5 })
-      );
-      const x = (Math.random() - 0.5) * 150;
-      const z = (Math.random() - 0.5) * 150;
-      mesh.position.set(x, 0.8, z);
-      scene.add(mesh);
-      pickups.push({ mesh, x, z });
-    }
-
-    function showBanner(text) {
-      const el = document.getElementById('event-banner');
-      el.textContent = text;
-      el.style.opacity = '1';
-      clearTimeout(el._t);
-      el._t = setTimeout(() => { el.style.opacity = '0'; }, 2000);
-    }
-
-    function updateHUD() {
-      document.getElementById('yen-box').textContent = '¥' + yen.toLocaleString();
-      let starsHtml = '';
-      for (let i = 1; i <= 5; i++) {
-        starsHtml += `<span class="${i <= wanted ? 'star-on' : 'star-off'}">★</span>`;
-      }
-      document.getElementById('stars-box').innerHTML = starsHtml;
-      document.getElementById('hp-fill').style.width = Math.max(0, hp) + '%';
-      document.getElementById('boost-fill').style.width = Math.max(0, boost) + '%';
-    }
-
-    function addWantedStarCheck() {
-      const nextWanted = Math.min(5, Math.floor(yen / 25000));
-      if (nextWanted > wanted) {
-        wanted = nextWanted;
-        showBanner(`★ ${wanted}-STAR WANTED — POLICE DO NOT CHASE`);
-      }
-    }
-
-    document.querySelectorAll('.mech-card').forEach(card => {
-      card.addEventListener('click', () => {
-        document.querySelectorAll('.mech-card').forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        selectedMech = parseInt(card.dataset.mech, 10);
-        buildMecha();
+    // Animate bars after they're in the DOM
+    requestAnimationFrame(() => {
+      statsDiv.querySelectorAll(".fill").forEach((fill, idx) => {
+        fill.style.width = Object.values(mech.stats)[idx] + "%";
       });
     });
+  }
+  selectMech(0);
 
-    document.getElementById('start-btn').addEventListener('click', () => {
-      document.getElementById('splash-screen').style.display = 'none';
-      document.getElementById('hud').style.display = 'block';
-      yen = 0;
-      wanted = 0;
-      hp = 100;
-      boost = 100;
-      lookYaw = 0;
-      lookPitch = 0.42;
-      mechaGroup.position.set(0, 0, 0);
-      mechaGroup.rotation.y = 0;
-      populateWorld();
-      updateHUD();
-      showBanner('DRAG ANYWHERE TO LOOK 360° • STICK TO WALK');
-      gameRunning = true;
-    });
-
-    // Joystick (Walk only)
-    const joyZone = document.getElementById('joystick-zone');
-    const joyKnob = document.getElementById('joystick-knob');
-    let joyActive = false;
-    let joyX = 0;
-    let joyY = 0;
-
-    function updateJoy(cx, cy) {
-      const rect = joyZone.getBoundingClientRect();
-      const midX = rect.left + rect.width / 2;
-      const midY = rect.top + rect.height / 2;
-      const maxR = rect.width * 0.36;
-      let dx = cx - midX;
-      let dy = cy - midY;
-      const d = Math.hypot(dx, dy);
-      if (d > maxR) {
-        dx = (dx / d) * maxR;
-        dy = (dy / d) * maxR;
-      }
-      joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-      joyX = dx / maxR;
-      joyY = dy / maxR;
-    }
-
-    joyZone.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); joyActive = true; updateJoy(e.touches[0].clientX, e.touches[0].clientY); });
-    joyZone.addEventListener('touchmove', e => { e.preventDefault(); e.stopPropagation(); if (joyActive) updateJoy(e.touches[0].clientX, e.touches[0].clientY); });
-    const endJoy = () => { joyActive = false; joyX = 0; joyY = 0; joyKnob.style.transform = 'translate(0px, 0px)'; };
-    joyZone.addEventListener('touchend', endJoy);
-    joyZone.addEventListener('touchcancel', endJoy);
-    joyZone.addEventListener('mousedown', e => { e.stopPropagation(); joyActive = true; updateJoy(e.clientX, e.clientY); });
-    window.addEventListener('mousemove', e => { if (joyActive) updateJoy(e.clientX, e.clientY); });
-    window.addEventListener('mouseup', endJoy);
-
-    // Free 360° Look Orbit (independent from joystick, never fights movement)
-    let lookDrag = false;
-    let lastLookX = 0;
-    let lastLookY = 0;
-
-    function applyLookDelta(dx, dy) {
-      lookYaw -= dx * 0.011;
-      lookPitch = Math.max(0.14, Math.min(1.15, lookPitch + dy * 0.008));
-    }
-
-    renderer.domElement.addEventListener('touchstart', e => {
-      if (e.touches.length === 1) {
-        lookDrag = true;
-        lastLookX = e.touches[0].clientX;
-        lastLookY = e.touches[0].clientY;
-      }
-    });
-    renderer.domElement.addEventListener('touchmove', e => {
-      if (lookDrag && e.touches.length === 1) {
-        const t = e.touches[0];
-        applyLookDelta(t.clientX - lastLookX, t.clientY - lastLookY);
-        lastLookX = t.clientX;
-        lastLookY = t.clientY;
-      }
-    });
-    renderer.domElement.addEventListener('touchend', () => { lookDrag = false; });
-
-    renderer.domElement.addEventListener('mousedown', e => {
-      lookDrag = true;
-      lastLookX = e.clientX;
-      lastLookY = e.clientY;
-    });
-    window.addEventListener('mousemove', e => {
-      if (lookDrag) {
-        applyLookDelta(e.clientX - lastLookX, e.clientY - lastLookY);
-        lastLookX = e.clientX;
-        lastLookY = e.clientY;
-      }
-    });
-    window.addEventListener('mouseup', () => { lookDrag = false; });
-
-    const bindHold = (id, setter) => {
-      const el = document.getElementById(id);
-      el.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); setter(true); });
-      el.addEventListener('touchend', () => setter(false));
-      el.addEventListener('mousedown', e => { e.stopPropagation(); setter(true); });
-      el.addEventListener('mouseup', () => setter(false));
-    };
-    bindHold('btn-fire', v => { isFiring = v; });
-    bindHold('btn-boost', v => { isBoosting = v; });
-
-    document.getElementById('btn-swap').addEventListener('click', e => {
-      e.stopPropagation();
-      selectedMech = (selectedMech + 1) % MECHAS.length;
-      buildMecha();
-      showBanner(`SWAPPED TO ${MECHAS[selectedMech].name}`);
-    });
-
-    const keys = {};
-    window.addEventListener('keydown', e => {
-      keys[e.code] = true;
-      if (e.code === 'Space') isFiring = true;
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') isBoosting = true;
-      if (e.code === 'KeyQ') document.getElementById('btn-swap').click();
-    });
-    window.addEventListener('keyup', e => {
-      keys[e.code] = false;
-      if (e.code === 'Space') isFiring = false;
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') isBoosting = false;
-    });
-
-    function fireBlast(now) {
-      const preset = MECHAS[selectedMech];
-      if (!isFiring || now - lastShot < preset.fireRate) return;
-      lastShot = now;
-
-      const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(0.32, 8, 8),
-        new THREE.MeshBasicMaterial({ color: preset.accent })
-      );
-
-      const dir = new THREE.Vector3(Math.sin(mechaGroup.rotation.y), 0, Math.cos(mechaGroup.rotation.y)).normalize();
-      mesh.position.copy(mechaGroup.position).add(new THREE.Vector3(0, 2.5, 0)).addScaledVector(dir, 1.4);
-      scene.add(mesh);
-
-      projectiles.push({ mesh, vel: dir.multiplyScalar(44), life: 1.2 });
-    }
-
-    function shortestAngleDiff(a, b) {
-      let diff = b - a;
-      while (diff > Math.PI) diff -= Math.PI * 2;
-      while (diff < -Math.PI) diff += Math.PI * 2;
-      return diff;
-    }
-
-    let prevTime = performance.now();
-    function animate(now) {
-      requestAnimationFrame(animate);
-      const dt = Math.min(0.05, (now - prevTime) / 1000);
-      prevTime = now;
-
-      if (gameRunning) {
-        const preset = MECHAS[selectedMech];
-        let stickX = joyX;
-        let stickY = joyY;
-        if (keys['KeyA'] || keys['ArrowLeft']) stickX -= 1;
-        if (keys['KeyD'] || keys['ArrowRight']) stickX += 1;
-        if (keys['KeyW'] || keys['ArrowUp']) stickY -= 1;
-        if (keys['KeyS'] || keys['ArrowDown']) stickY += 1;
-
-        const len = Math.hypot(stickX, stickY);
-        if (len > 0.05) {
-          const sx = stickX / Math.max(1, len);
-          const sy = stickY / Math.max(1, len);
-
-          // Camera forward & right projected onto XZ plane so walking/turning is always intuitive
-          const camForwardX = Math.sin(lookYaw);
-          const camForwardZ = Math.cos(lookYaw);
-          const camRightX = Math.cos(lookYaw);
-          const camRightZ = -Math.sin(lookYaw);
-
-          const worldX = camRightX * sx - camForwardX * sy;
-          const worldZ = camRightZ * sx - camForwardZ * sy;
-          const wLen = Math.hypot(worldX, worldZ) || 1;
-          const dirX = worldX / wLen;
-          const dirZ = worldZ / wLen;
-
-          const sprinting = isBoosting && boost > 2;
-          if (sprinting) {
-            boost = Math.max(0, boost - 25 * dt);
-          } else {
-            boost = Math.min(100, boost + 14 * dt);
-          }
-
-          const spd = preset.speed * (sprinting ? 1.75 : 1) * Math.min(1, len);
-          mechaGroup.position.x = Math.max(-105, Math.min(105, mechaGroup.position.x + dirX * spd * dt));
-          mechaGroup.position.z = Math.max(-105, Math.min(105, mechaGroup.position.z + dirZ * spd * dt));
-
-          const targetFacing = Math.atan2(dirX, dirZ);
-          mechaGroup.rotation.y += shortestAngleDiff(mechaGroup.rotation.y, targetFacing) * Math.min(1, dt * 14);
-
-          walkCycle += dt * (sprinting ? 18 : 11);
-          leftLeg.rotation.x = Math.sin(walkCycle) * 0.65;
-          rightLeg.rotation.x = -Math.sin(walkCycle) * 0.65;
-          mechaGroup.position.y = Math.abs(Math.cos(walkCycle)) * 0.14;
-        } else {
-          boost = Math.min(100, boost + 16 * dt);
-          leftLeg.rotation.x *= 0.8;
-          rightLeg.rotation.x *= 0.8;
-          mechaGroup.position.y *= 0.8;
-        }
-
-        // Collide with intact houses
-        for (const h of houses) {
-          if (!h.intact) continue;
-          const dx = mechaGroup.position.x - h.x;
-          const dz = mechaGroup.position.z - h.z;
-          const dist = Math.hypot(dx, dz);
-          const minDist = h.radius + 1.1;
-          if (dist < minDist && dist > 0.001) {
-            mechaGroup.position.x = h.x + (dx / dist) * minDist;
-            mechaGroup.position.z = h.z + (dz / dist) * minDist;
-          }
-        }
-
-        // Move civilian cars & non-chasing police cars along streets
-        const flashOn = Math.floor(now / 180) % 2 === 0;
-        for (const v of vehicles) {
-          if (!v.alive) continue;
-          if (v.alongX) {
-            v.car.position.x += v.dir * v.speed * dt;
-            if (v.car.position.x > 105) v.car.position.x = -105;
-            if (v.car.position.x < -105) v.car.position.x = 105;
-          } else {
-            v.car.position.z += v.dir * v.speed * dt;
-            if (v.car.position.z > 105) v.car.position.z = -105;
-            if (v.car.position.z < -105) v.car.position.z = 105;
-          }
-
-          if (v.isPolice && v.sirenA && v.sirenB) {
-            v.sirenA.material.color.setHex(flashOn ? 0xff1e56 : 0x330010);
-            v.sirenB.material.color.setHex(flashOn ? 0x002244 : 0x00f0ff);
-          }
-        }
-
-        // Collect Yen pickups
-        for (let i = pickups.length - 1; i >= 0; i--) {
-          const p = pickups[i];
-          p.mesh.rotation.y += 2.2 * dt;
-          if (Math.hypot(p.x - mechaGroup.position.x, p.z - mechaGroup.position.z) < 2.4) {
-            scene.remove(p.mesh);
-            pickups.splice(i, 1);
-            yen += 5000;
-            addWantedStarCheck();
-            updateHUD();
-            spawnPickup();
-          }
-        }
-
-        fireBlast(now);
-
-        // Projectiles vs houses & vehicles
-        for (let i = projectiles.length - 1; i >= 0; i--) {
-          const b = projectiles[i];
-          b.mesh.position.addScaledVector(b.vel, dt);
-          b.life -= dt;
-          let hit = false;
-
-          for (const h of houses) {
-            if (!h.intact) continue;
-            if (Math.hypot(b.mesh.position.x - h.x, b.mesh.position.z - h.z) < h.radius + 0.4 && b.mesh.position.y < 7) {
-              h.hp -= 30;
-              hit = true;
-              if (h.hp <= 0) {
-                h.intact = false;
-                h.mesh.scale.set(1, 0.18, 1);
-                yen += 10000;
-                addWantedStarCheck();
-                updateHUD();
-              }
-              break;
-            }
-          }
-
-          if (!hit) {
-            for (const v of vehicles) {
-              if (!v.alive) continue;
-              if (Math.hypot(b.mesh.position.x - v.car.position.x, b.mesh.position.z - v.car.position.z) < 2.3 && b.mesh.position.y < 3.5) {
-                v.hp -= 30;
-                hit = true;
-                if (v.hp <= 0) {
-                  v.alive = false;
-                  v.car.scale.set(1, 0.25, 1);
-                  yen += v.isPolice ? 15000 : 8000;
-                  addWantedStarCheck();
-                  updateHUD();
-                }
-                break;
-              }
-            }
-          }
-
-          if (hit || b.life <= 0) {
-            scene.remove(b.mesh);
-            projectiles.splice(i, 1);
-          }
-        }
-
-        // Spherical 360° orbit camera around mecha
-        const camDist = 14;
-        const horizDist = Math.cos(lookPitch) * camDist;
-        const vertDist = Math.sin(lookPitch) * camDist + 1.8;
-
-        const desiredCam = new THREE.Vector3(
-          mechaGroup.position.x - Math.sin(lookYaw) * horizDist,
-          mechaGroup.position.y + vertDist,
-          mechaGroup.position.z - Math.cos(lookYaw) * horizDist
-        );
-        camera.position.lerp(desiredCam, 0.16);
-        camera.lookAt(mechaGroup.position.x, mechaGroup.position.y + 2.2, mechaGroup.position.z);
-      } else {
-        camera.position.set(Math.sin(now * 0.0004) * 18, 11, Math.cos(now * 0.0004) * 18);
-        camera.lookAt(0, 2, 0);
-      }
-
-      renderer.render(scene, camera);
-    }
-
-    populateWorld();
-    requestAnimationFrame(animate);
-  </script>
+  // ----- WISHLIST FORM -----
+  const toast = document.getElementById("toast");
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2800);
+  }
+  document.getElementById("wishForm").addEventListener("submit", e => {
+    e.preventDefault();
+    showToast("You're on the list, pilot!");
+    e.target.reset();
+  });
+</script>
 </body>
 </html>
