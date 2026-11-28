@@ -107,7 +107,7 @@
   <div id="hud">
     <div id="title">NEON MECH CITY</div>
     <span id="score">Buildings smashed: 0</span><br>
-    <small>Joystick to move · WASD/arrows · Space to smash</small>
+    <small>Joystick to move · Drag screen to look · Space to smash</small>
   </div>
 
   <div id="controls">
@@ -168,7 +168,7 @@
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Road strips and dashed lane markings
+    // Roads and lane markings
     const roadMaterial = new THREE.MeshStandardMaterial({
       color: 0x171c29,
       roughness: 0.95
@@ -203,7 +203,7 @@
       }
     }
 
-    // Decorative distant stars
+    // Stars
     const starPositions = [];
     for (let i = 0; i < 180; i++) {
       starPositions.push(
@@ -212,6 +212,7 @@
         (Math.random() - 0.5) * 180
       );
     }
+
     const starGeometry = new THREE.BufferGeometry();
     starGeometry.setAttribute(
       "position",
@@ -226,10 +227,12 @@
       })
     ));
 
+    // City buildings
     const buildings = [];
     const buildingColors = [
       0x39465f, 0x46536b, 0x51455f, 0x3e5863, 0x66504f
     ];
+
     const windowMaterial = new THREE.MeshStandardMaterial({
       color: 0x83e8ff,
       emissive: 0x34cfff,
@@ -256,7 +259,6 @@
           const x = -width / 2 + (col + 0.5) * width / columns;
           const y = 1.5 + row * 2.1;
 
-          // Front and back window faces
           dummy.position.set(x, y, -depth / 2 - 0.055);
           dummy.rotation.set(0, 0, 0);
           dummy.updateMatrix();
@@ -276,7 +278,6 @@
       const width = 8 + Math.random() * 3;
       const depth = 8 + Math.random() * 3;
       const height = 10 + Math.random() * 19;
-
       const group = new THREE.Group();
       group.position.set(x, 0, z);
 
@@ -301,17 +302,19 @@
         emissiveIntensity: 1.7
       });
 
-      // Glowing vertical corner accents
       for (const sideX of [-1, 1]) {
         const trim = new THREE.Mesh(
           new THREE.BoxGeometry(0.12, height, 0.14),
           trimMaterial
         );
-        trim.position.set(sideX * (width / 2 + 0.04), height / 2, -depth / 2 - 0.05);
+        trim.position.set(
+          sideX * (width / 2 + 0.04),
+          height / 2,
+          -depth / 2 - 0.05
+        );
         group.add(trim);
       }
 
-      // Small rooftop structures
       const rooftop = new THREE.Mesh(
         new THREE.BoxGeometry(width * 0.35, 1.2, depth * 0.35),
         new THREE.MeshStandardMaterial({ color: 0x252d3b, roughness: 0.8 })
@@ -321,9 +324,7 @@
       group.add(rooftop);
 
       scene.add(group);
-      group.userData = {
-        alive: true, x, z, width, depth, height
-      };
+      group.userData = { alive: true, x, z, width, depth, height };
       buildings.push(group);
     }
 
@@ -334,12 +335,13 @@
     }
 
     // Street lamps
-    const lampPoleMaterial = new THREE.MeshStandardMaterial({
+    const poleMaterial = new THREE.MeshStandardMaterial({
       color: 0x333c4c,
       metalness: 0.7,
       roughness: 0.35
     });
-    const lampGlowMaterial = new THREE.MeshStandardMaterial({
+
+    const lampMaterial = new THREE.MeshStandardMaterial({
       color: 0xc6f9ff,
       emissive: 0x52dfff,
       emissiveIntensity: 2.5
@@ -348,7 +350,7 @@
     for (const [x, z] of [[-6,-6], [6,-6], [-6,6], [6,6], [0,-27], [27,0]]) {
       const pole = new THREE.Mesh(
         new THREE.CylinderGeometry(0.09, 0.14, 5, 8),
-        lampPoleMaterial
+        poleMaterial
       );
       pole.position.set(x, 2.5, z);
       pole.castShadow = true;
@@ -356,7 +358,7 @@
 
       const lamp = new THREE.Mesh(
         new THREE.SphereGeometry(0.32, 10, 8),
-        lampGlowMaterial
+        lampMaterial
       );
       lamp.position.set(x, 5.1, z);
       scene.add(lamp);
@@ -366,18 +368,18 @@
       scene.add(light);
     }
 
-    // Build the mech from layered armor pieces
+    // Mech
     const mech = new THREE.Group();
     scene.add(mech);
 
-    function boxPart(parent, size, color, position, materialOptions = {}) {
+    function boxPart(parent, size, color, position, options = {}) {
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(...size),
         new THREE.MeshStandardMaterial({
           color,
           roughness: 0.45,
           metalness: 0.35,
-          ...materialOptions
+          ...options
         })
       );
       mesh.position.set(...position);
@@ -411,11 +413,9 @@
       emissiveIntensity: 2
     });
 
-    // Chest plate and glowing reactor
     boxPart(mech, [1.05, 0.52, 0.14], 0xe85d47, [0, 2.24, -0.66]);
     spherePart(mech, 0.23, 0x7af4ff, [0, 2.18, -0.79], 0x26cfff);
 
-    // Shoulders, arms and joints
     boxPart(mech, [0.9, 0.65, 0.9], 0xe85d47, [-1.35, 2.55, 0]);
     boxPart(mech, [0.9, 0.65, 0.9], 0xe85d47, [1.35, 2.55, 0]);
     spherePart(mech, 0.32, 0xaec5d1, [-1.32, 2.0, 0]);
@@ -423,13 +423,11 @@
     boxPart(mech, [0.58, 1.15, 0.62], 0x718898, [-1.35, 1.42, 0]);
     boxPart(mech, [0.58, 1.15, 0.62], 0x718898, [1.35, 1.42, 0]);
 
-    // Legs and heavy feet
     boxPart(mech, [0.72, 1.05, 0.75], 0x38495f, [-0.48, 0.85, 0]);
     boxPart(mech, [0.72, 1.05, 0.75], 0x38495f, [0.48, 0.85, 0]);
     boxPart(mech, [0.88, 0.35, 1.15], 0x242e40, [-0.48, 0.22, -0.12]);
     boxPart(mech, [0.88, 0.35, 1.15], 0x242e40, [0.48, 0.22, -0.12]);
 
-    // Small glowing shoulder lights
     spherePart(mech, 0.12, 0xffd86b, [-1.35, 2.62, -0.47], 0xffa500);
     spherePart(mech, 0.12, 0xffd86b, [1.35, 2.62, -0.47], 0xffa500);
 
@@ -438,8 +436,12 @@
     let joyY = 0;
     let joystickPointer = null;
 
-    // Camera keeps a steady heading so joystick directions never flip.
-    const cameraYaw = 0;
+    // Orbit camera angles; joystick movement uses the current camera yaw.
+    let cameraYaw = 0;
+    let cameraPitch = 0.48;
+    let lookPointer = null;
+    let lastLookX = 0;
+    let lastLookY = 0;
 
     addEventListener("keydown", event => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
@@ -451,6 +453,38 @@
 
     addEventListener("keyup", event => keys.delete(event.key.toLowerCase()));
 
+    // Drag the open screen area to rotate the camera.
+    renderer.domElement.addEventListener("pointerdown", event => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      lookPointer = event.pointerId;
+      lastLookX = event.clientX;
+      lastLookY = event.clientY;
+      renderer.domElement.setPointerCapture(event.pointerId);
+    });
+
+    renderer.domElement.addEventListener("pointermove", event => {
+      if (event.pointerId !== lookPointer) return;
+
+      const deltaX = event.clientX - lastLookX;
+      const deltaY = event.clientY - lastLookY;
+      lastLookX = event.clientX;
+      lastLookY = event.clientY;
+
+      cameraYaw -= deltaX * 0.006;
+      cameraPitch = THREE.MathUtils.clamp(
+        cameraPitch - deltaY * 0.004,
+        0.18,
+        1.0
+      );
+    });
+
+    function endLook(event) {
+      if (event.pointerId === lookPointer) lookPointer = null;
+    }
+    renderer.domElement.addEventListener("pointerup", endLook);
+    renderer.domElement.addEventListener("pointercancel", endLook);
+
+    // Analog mobile joystick
     const joystick = document.querySelector("#joystick");
     const stick = document.querySelector("#stick");
 
@@ -527,7 +561,6 @@
       target.userData.alive = false;
       target.visible = false;
 
-      // Leave a low rubble pile where the building stood.
       const rubble = new THREE.Group();
       const rubbleMaterial = new THREE.MeshStandardMaterial({
         color: 0x625b61,
@@ -562,8 +595,7 @@
     }
 
     function update() {
-      // Inputs are relative to the camera view:
-      // joystick up is forward, and joystick left is always left.
+      // Convert joystick input from camera-relative to world-relative movement.
       let forwardInput = -joyY;
       let strafeInput = joyX;
 
@@ -604,27 +636,28 @@
       if (!blocked(nextX, mech.position.z)) mech.position.x = nextX;
       if (!blocked(mech.position.x, nextZ)) mech.position.z = nextZ;
 
-      // Face the direction of travel.
       if (Math.hypot(dx, dz) > 0.08) {
         mech.rotation.y = Math.atan2(-dx, -dz);
       }
 
-      // Follow the mech's position while keeping a stable view direction.
-      const followDistance = 19;
-      const cameraTarget = new THREE.Vector3(
-        mech.position.x + Math.sin(cameraYaw) * followDistance,
-        13,
-        mech.position.z + Math.cos(cameraYaw) * followDistance
+      // Orbit around the mech and smoothly follow its position.
+      const distance = 19;
+      const horizontalDistance = distance * Math.cos(cameraPitch);
+      const cameraHeight = 2.5 + distance * Math.sin(cameraPitch);
+
+      const desiredCameraPosition = new THREE.Vector3(
+        mech.position.x + Math.sin(cameraYaw) * horizontalDistance,
+        cameraHeight,
+        mech.position.z + Math.cos(cameraYaw) * horizontalDistance
       );
 
-      camera.position.lerp(cameraTarget, 0.09);
+      camera.position.lerp(desiredCameraPosition, 0.12);
       camera.lookAt(mech.position.x, 1.8, mech.position.z);
 
-      // Gentle mech idle/movement bob
       mech.position.y = Math.sin(performance.now() * 0.006) * 0.035;
     }
 
-    camera.position.set(0, 13, 19);
+    camera.position.set(0, 12, 18);
 
     function animate() {
       requestAnimationFrame(animate);
