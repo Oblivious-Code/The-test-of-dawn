@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Mech City 3D</title>
+  <title>Neon Mech City</title>
   <style>
     * { box-sizing: border-box; }
 
@@ -12,28 +12,32 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #9cc5d0;
-      font: 16px system-ui, sans-serif;
+      background: #101426;
+      color: white;
+      font: 15px system-ui, sans-serif;
       touch-action: none;
     }
 
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
+    canvas { display: block; }
 
     #hud {
       position: fixed;
       top: 12px;
       left: 12px;
       z-index: 2;
-      padding: 10px 14px;
+      padding: 11px 15px;
+      border: 1px solid #88e7ff55;
       border-radius: 12px;
-      color: white;
-      background: #101820dd;
-      line-height: 1.4;
+      background: #101426d9;
+      box-shadow: 0 0 20px #31bde033;
+      line-height: 1.45;
       pointer-events: none;
+    }
+
+    #title {
+      color: #7deaff;
+      font-weight: 900;
+      letter-spacing: 1.5px;
     }
 
     #controls {
@@ -51,9 +55,10 @@
       position: relative;
       width: 140px;
       height: 140px;
-      border: 2px solid #ffffff66;
+      border: 2px solid #a9efff77;
       border-radius: 50%;
-      background: #263746aa;
+      background: #142334b8;
+      box-shadow: inset 0 0 20px #4fdcff22, 0 0 18px #4fdcff22;
       touch-action: none;
       pointer-events: auto;
       user-select: none;
@@ -61,37 +66,46 @@
 
     #stick {
       position: absolute;
-      left: 50%;
       top: 50%;
+      left: 50%;
       width: 56px;
       height: 56px;
-      border: 1px solid #ffffff88;
+      border: 1px solid #ffffffaa;
       border-radius: 50%;
-      background: #d9e3e8dd;
+      background: linear-gradient(145deg, #e8fbff, #70cce5);
+      box-shadow: 0 0 14px #70cce599;
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
 
     button {
-      width: 82px;
-      height: 82px;
-      border: 1px solid #ffffff66;
+      width: 84px;
+      height: 84px;
+      border: 2px solid #ffd0aa;
       border-radius: 50%;
-      background: #e85d3fdd;
+      background: linear-gradient(145deg, #ff835c, #bb3544);
+      box-shadow: 0 0 18px #ff534c66;
       color: white;
-      font-size: 15px;
-      font-weight: 800;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 1px;
       touch-action: none;
       user-select: none;
       pointer-events: auto;
     }
 
-    button:active { background: #ff795b; }
+    button:active { filter: brightness(1.35); }
+
+    @media (max-height: 500px) {
+      #joystick { width: 112px; height: 112px; }
+      #stick { width: 48px; height: 48px; }
+      button { width: 70px; height: 70px; }
+    }
   </style>
 </head>
 <body>
   <div id="hud">
-    🏙️ MECH CITY 3D<br>
+    <div id="title">NEON MECH CITY</div>
     <span id="score">Buildings smashed: 0</span><br>
     <small>Joystick to move · WASD/arrows · Space to smash</small>
   </div>
@@ -107,11 +121,11 @@
     import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x9cc5d0);
-    scene.fog = new THREE.Fog(0x9cc5d0, 75, 145);
+    scene.background = new THREE.Color(0x101426);
+    scene.fog = new THREE.Fog(0x101426, 80, 150);
 
     const camera = new THREE.PerspectiveCamera(
-      58, innerWidth / innerHeight, 0.1, 220
+      57, innerWidth / innerHeight, 0.1, 220
     );
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -119,98 +133,251 @@
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
     document.body.appendChild(renderer.domElement);
 
-    scene.add(new THREE.HemisphereLight(0xe6f7ff, 0x59615b, 2));
+    scene.add(new THREE.HemisphereLight(0x9bcaff, 0x202035, 1.8));
 
-    const sun = new THREE.DirectionalLight(0xfff0cf, 3);
-    sun.position.set(-25, 45, 30);
-    sun.castShadow = true;
-    scene.add(sun);
+    const moonlight = new THREE.DirectionalLight(0xb9dfff, 2.2);
+    moonlight.position.set(-28, 48, 22);
+    moonlight.castShadow = true;
+    moonlight.shadow.mapSize.set(1024, 1024);
+    scene.add(moonlight);
 
+    const pinkLight = new THREE.PointLight(0xff3f9b, 32, 48);
+    pinkLight.position.set(0, 9, -12);
+    scene.add(pinkLight);
+
+    const cyanLight = new THREE.PointLight(0x35d9ff, 28, 48);
+    cyanLight.position.set(10, 8, 10);
+    scene.add(cyanLight);
+
+    // Dark city ground
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(130, 130),
-      new THREE.MeshStandardMaterial({ color: 0x465052, roughness: 1 })
+      new THREE.MeshStandardMaterial({
+        color: 0x242936,
+        roughness: 0.88,
+        metalness: 0.12
+      })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.08;
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Simple road markings
-    const stripeMaterial = new THREE.MeshBasicMaterial({ color: 0xd7c879 });
+    // Road strips and dashed lane markings
+    const roadMaterial = new THREE.MeshStandardMaterial({
+      color: 0x171c29,
+      roughness: 0.95
+    });
+    const stripeMaterial = new THREE.MeshBasicMaterial({ color: 0xb9b879 });
 
-    for (let i = -50; i <= 50; i += 10) {
-      for (const z of [-30, -10, 10, 30]) {
-        const stripe = new THREE.Mesh(
-          new THREE.BoxGeometry(0.18, 0.025, 3),
-          stripeMaterial
-        );
-        stripe.position.set(i, -0.035, z);
-        scene.add(stripe);
-      }
+    for (const road of [-30, -10, 10, 30]) {
+      const roadX = new THREE.Mesh(
+        new THREE.BoxGeometry(7, 0.025, 130), roadMaterial
+      );
+      roadX.position.set(road, -0.035, 0);
+      scene.add(roadX);
 
-      for (const x of [-30, -10, 10, 30]) {
-        const stripe = new THREE.Mesh(
-          new THREE.BoxGeometry(3, 0.025, 0.18),
-          stripeMaterial
+      const roadZ = new THREE.Mesh(
+        new THREE.BoxGeometry(130, 0.025, 7), roadMaterial
+      );
+      roadZ.position.set(0, -0.034, road);
+      scene.add(roadZ);
+
+      for (let p = -58; p <= 58; p += 12) {
+        const dashX = new THREE.Mesh(
+          new THREE.BoxGeometry(0.14, 0.035, 3), stripeMaterial
         );
-        stripe.position.set(x, -0.034, i);
-        scene.add(stripe);
+        dashX.position.set(road, 0, p);
+        scene.add(dashX);
+
+        const dashZ = new THREE.Mesh(
+          new THREE.BoxGeometry(3, 0.035, 0.14), stripeMaterial
+        );
+        dashZ.position.set(p, 0.001, road);
+        scene.add(dashZ);
       }
     }
 
-    // City buildings
+    // Decorative distant stars
+    const starPositions = [];
+    for (let i = 0; i < 180; i++) {
+      starPositions.push(
+        (Math.random() - 0.5) * 180,
+        28 + Math.random() * 60,
+        (Math.random() - 0.5) * 180
+      );
+    }
+    const starGeometry = new THREE.BufferGeometry();
+    starGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(starPositions, 3)
+    );
+    scene.add(new THREE.Points(
+      starGeometry,
+      new THREE.PointsMaterial({
+        color: 0xc4eaff,
+        size: 0.35,
+        sizeAttenuation: true
+      })
+    ));
+
     const buildings = [];
     const buildingColors = [
-      0x687d89, 0x88786a, 0x637b6b, 0x726f88, 0x9a8064
+      0x39465f, 0x46536b, 0x51455f, 0x3e5863, 0x66504f
     ];
+    const windowMaterial = new THREE.MeshStandardMaterial({
+      color: 0x83e8ff,
+      emissive: 0x34cfff,
+      emissiveIntensity: 1.4,
+      roughness: 0.35
+    });
+
+    function addWindowGrid(group, width, height, depth) {
+      const windowWidth = 0.65;
+      const windowHeight = 0.85;
+      const columns = Math.max(2, Math.floor(width / 1.7));
+      const rows = Math.max(2, Math.floor(height / 2.3));
+      const windows = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(windowWidth, windowHeight, 0.1),
+        windowMaterial,
+        columns * rows * 2
+      );
+
+      const dummy = new THREE.Object3D();
+      let index = 0;
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < columns; col++) {
+          const x = -width / 2 + (col + 0.5) * width / columns;
+          const y = 1.5 + row * 2.1;
+
+          // Front and back window faces
+          dummy.position.set(x, y, -depth / 2 - 0.055);
+          dummy.rotation.set(0, 0, 0);
+          dummy.updateMatrix();
+          windows.setMatrixAt(index++, dummy.matrix);
+
+          dummy.position.set(x, y, depth / 2 + 0.055);
+          dummy.rotation.set(0, Math.PI, 0);
+          dummy.updateMatrix();
+          windows.setMatrixAt(index++, dummy.matrix);
+        }
+      }
+
+      group.add(windows);
+    }
+
+    function createBuilding(x, z) {
+      const width = 8 + Math.random() * 3;
+      const depth = 8 + Math.random() * 3;
+      const height = 10 + Math.random() * 19;
+
+      const group = new THREE.Group();
+      group.position.set(x, 0, z);
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, depth),
+        new THREE.MeshStandardMaterial({
+          color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
+          roughness: 0.72,
+          metalness: 0.18
+        })
+      );
+      body.position.y = height / 2;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+
+      addWindowGrid(group, width, height, depth);
+
+      const trimMaterial = new THREE.MeshStandardMaterial({
+        color: 0x39dfff,
+        emissive: 0x13bfff,
+        emissiveIntensity: 1.7
+      });
+
+      // Glowing vertical corner accents
+      for (const sideX of [-1, 1]) {
+        const trim = new THREE.Mesh(
+          new THREE.BoxGeometry(0.12, height, 0.14),
+          trimMaterial
+        );
+        trim.position.set(sideX * (width / 2 + 0.04), height / 2, -depth / 2 - 0.05);
+        group.add(trim);
+      }
+
+      // Small rooftop structures
+      const rooftop = new THREE.Mesh(
+        new THREE.BoxGeometry(width * 0.35, 1.2, depth * 0.35),
+        new THREE.MeshStandardMaterial({ color: 0x252d3b, roughness: 0.8 })
+      );
+      rooftop.position.set(0, height + 0.6, 0);
+      rooftop.castShadow = true;
+      group.add(rooftop);
+
+      scene.add(group);
+      group.userData = {
+        alive: true, x, z, width, depth, height
+      };
+      buildings.push(group);
+    }
 
     for (const x of [-40, -20, 20, 40]) {
       for (const z of [-40, -20, 20, 40]) {
-        const width = 8 + Math.random() * 3;
-        const depth = 8 + Math.random() * 3;
-        const height = 8 + Math.random() * 22;
-
-        const building = new THREE.Mesh(
-          new THREE.BoxGeometry(width, height, depth),
-          new THREE.MeshStandardMaterial({
-            color: buildingColors[
-              Math.floor(Math.random() * buildingColors.length)
-            ],
-            roughness: 0.82
-          })
-        );
-
-        building.position.set(x, height / 2, z);
-        building.castShadow = true;
-        building.receiveShadow = true;
-        building.userData = { alive: true, x, z, width, depth };
-        scene.add(building);
-        buildings.push(building);
-
-        const roof = new THREE.Mesh(
-          new THREE.BoxGeometry(width * 0.45, 0.7, depth * 0.45),
-          new THREE.MeshStandardMaterial({ color: 0x41494b })
-        );
-        roof.position.set(x, height + 0.35, z);
-        roof.castShadow = true;
-        scene.add(roof);
-        building.userData.roof = roof;
+        createBuilding(x, z);
       }
     }
 
-    // Original mech made from simple 3D shapes
+    // Street lamps
+    const lampPoleMaterial = new THREE.MeshStandardMaterial({
+      color: 0x333c4c,
+      metalness: 0.7,
+      roughness: 0.35
+    });
+    const lampGlowMaterial = new THREE.MeshStandardMaterial({
+      color: 0xc6f9ff,
+      emissive: 0x52dfff,
+      emissiveIntensity: 2.5
+    });
+
+    for (const [x, z] of [[-6,-6], [6,-6], [-6,6], [6,6], [0,-27], [27,0]]) {
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09, 0.14, 5, 8),
+        lampPoleMaterial
+      );
+      pole.position.set(x, 2.5, z);
+      pole.castShadow = true;
+      scene.add(pole);
+
+      const lamp = new THREE.Mesh(
+        new THREE.SphereGeometry(0.32, 10, 8),
+        lampGlowMaterial
+      );
+      lamp.position.set(x, 5.1, z);
+      scene.add(lamp);
+
+      const light = new THREE.PointLight(0x57dfff, 7, 12);
+      light.position.set(x, 5, z);
+      scene.add(light);
+    }
+
+    // Build the mech from layered armor pieces
     const mech = new THREE.Group();
     scene.add(mech);
 
-    function addPart(parent, size, color, position) {
+    function boxPart(parent, size, color, position, materialOptions = {}) {
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(...size),
         new THREE.MeshStandardMaterial({
           color,
-          roughness: 0.55,
-          metalness: 0.18
+          roughness: 0.45,
+          metalness: 0.35,
+          ...materialOptions
         })
       );
       mesh.position.set(...position);
@@ -220,19 +387,59 @@
       return mesh;
     }
 
-    addPart(mech, [1.8, 1.7, 1.2], 0xe85d3f, [0, 2.0, 0]);       // torso
-    addPart(mech, [1.25, 0.8, 1.0], 0xf2c14e, [0, 3.25, 0]);    // head
-    addPart(mech, [0.9, 0.18, 0.12], 0x14242b, [0, 3.3, -0.52]); // visor
-    addPart(mech, [0.55, 1.45, 0.65], 0xb6c7c9, [-1.3, 2.05, 0]); // arm
-    addPart(mech, [0.55, 1.45, 0.65], 0xb6c7c9, [1.3, 2.05, 0]);  // arm
-    addPart(mech, [0.65, 1.35, 0.75], 0x344956, [-0.48, 0.85, 0]); // leg
-    addPart(mech, [0.65, 1.35, 0.75], 0x344956, [0.48, 0.85, 0]);  // leg
+    function spherePart(parent, radius, color, position, emissive = 0x000000) {
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 16, 12),
+        new THREE.MeshStandardMaterial({
+          color,
+          roughness: 0.38,
+          metalness: 0.45,
+          emissive,
+          emissiveIntensity: 1.5
+        })
+      );
+      mesh.position.set(...position);
+      mesh.castShadow = true;
+      parent.add(mesh);
+      return mesh;
+    }
 
-    // Keyboard and joystick input
+    boxPart(mech, [2.0, 1.65, 1.25], 0x293b51, [0, 2.05, 0]);
+    boxPart(mech, [1.35, 0.82, 1.0], 0xe8a543, [0, 3.3, 0]);
+    boxPart(mech, [0.96, 0.2, 0.12], 0x8cf4ff, [0, 3.35, -0.53], {
+      emissive: 0x25dfff,
+      emissiveIntensity: 2
+    });
+
+    // Chest plate and glowing reactor
+    boxPart(mech, [1.05, 0.52, 0.14], 0xe85d47, [0, 2.24, -0.66]);
+    spherePart(mech, 0.23, 0x7af4ff, [0, 2.18, -0.79], 0x26cfff);
+
+    // Shoulders, arms and joints
+    boxPart(mech, [0.9, 0.65, 0.9], 0xe85d47, [-1.35, 2.55, 0]);
+    boxPart(mech, [0.9, 0.65, 0.9], 0xe85d47, [1.35, 2.55, 0]);
+    spherePart(mech, 0.32, 0xaec5d1, [-1.32, 2.0, 0]);
+    spherePart(mech, 0.32, 0xaec5d1, [1.32, 2.0, 0]);
+    boxPart(mech, [0.58, 1.15, 0.62], 0x718898, [-1.35, 1.42, 0]);
+    boxPart(mech, [0.58, 1.15, 0.62], 0x718898, [1.35, 1.42, 0]);
+
+    // Legs and heavy feet
+    boxPart(mech, [0.72, 1.05, 0.75], 0x38495f, [-0.48, 0.85, 0]);
+    boxPart(mech, [0.72, 1.05, 0.75], 0x38495f, [0.48, 0.85, 0]);
+    boxPart(mech, [0.88, 0.35, 1.15], 0x242e40, [-0.48, 0.22, -0.12]);
+    boxPart(mech, [0.88, 0.35, 1.15], 0x242e40, [0.48, 0.22, -0.12]);
+
+    // Small glowing shoulder lights
+    spherePart(mech, 0.12, 0xffd86b, [-1.35, 2.62, -0.47], 0xffa500);
+    spherePart(mech, 0.12, 0xffd86b, [1.35, 2.62, -0.47], 0xffa500);
+
     const keys = new Set();
     let joyX = 0;
     let joyY = 0;
     let joystickPointer = null;
+
+    // Camera keeps a steady heading so joystick directions never flip.
+    const cameraYaw = 0;
 
     addEventListener("keydown", event => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
@@ -242,9 +449,7 @@
       if (event.key === " ") smash();
     });
 
-    addEventListener("keyup", event => {
-      keys.delete(event.key.toLowerCase());
-    });
+    addEventListener("keyup", event => keys.delete(event.key.toLowerCase()));
 
     const joystick = document.querySelector("#joystick");
     const stick = document.querySelector("#stick");
@@ -253,9 +458,9 @@
       const rect = joystick.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-
       let dx = event.clientX - centerX;
       let dy = event.clientY - centerY;
+
       const maxRadius = 44;
       const distance = Math.hypot(dx, dy);
 
@@ -301,7 +506,7 @@
 
     function smash() {
       let target = null;
-      let nearest = 9;
+      let nearest = 10;
 
       for (const building of buildings) {
         if (!building.userData.alive) continue;
@@ -321,19 +526,34 @@
 
       target.userData.alive = false;
       target.visible = false;
-      target.userData.roof.visible = false;
 
-      const rubble = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          target.userData.width,
-          0.45,
-          target.userData.depth
-        ),
-        new THREE.MeshStandardMaterial({ color: 0x76685a, roughness: 1 })
-      );
+      // Leave a low rubble pile where the building stood.
+      const rubble = new THREE.Group();
+      const rubbleMaterial = new THREE.MeshStandardMaterial({
+        color: 0x625b61,
+        roughness: 1
+      });
 
-      rubble.position.set(target.userData.x, 0.22, target.userData.z);
-      rubble.receiveShadow = true;
+      for (let i = 0; i < 9; i++) {
+        const chunk = new THREE.Mesh(
+          new THREE.BoxGeometry(
+            1 + Math.random() * 2.4,
+            0.5 + Math.random() * 1.1,
+            1 + Math.random() * 2.4
+          ),
+          rubbleMaterial
+        );
+        chunk.position.set(
+          (Math.random() - 0.5) * target.userData.width,
+          0.25 + Math.random() * 0.45,
+          (Math.random() - 0.5) * target.userData.depth
+        );
+        chunk.rotation.y = Math.random() * Math.PI;
+        chunk.castShadow = true;
+        rubble.add(chunk);
+      }
+
+      rubble.position.set(target.userData.x, 0, target.userData.z);
       scene.add(rubble);
 
       smashed++;
@@ -342,25 +562,34 @@
     }
 
     function update() {
-      let dx = joyX;
-      let dz = joyY;
+      // Inputs are relative to the camera view:
+      // joystick up is forward, and joystick left is always left.
+      let forwardInput = -joyY;
+      let strafeInput = joyX;
 
-      if (keys.has("a") || keys.has("arrowleft")) dx--;
-      if (keys.has("d") || keys.has("arrowright")) dx++;
-      if (keys.has("w") || keys.has("arrowup")) dz--;
-      if (keys.has("s") || keys.has("arrowdown")) dz++;
+      if (keys.has("w") || keys.has("arrowup")) forwardInput += 1;
+      if (keys.has("s") || keys.has("arrowdown")) forwardInput -= 1;
+      if (keys.has("a") || keys.has("arrowleft")) strafeInput -= 1;
+      if (keys.has("d") || keys.has("arrowright")) strafeInput += 1;
 
-      const inputLength = Math.hypot(dx, dz);
-      if (inputLength > 1) {
-        dx /= inputLength;
-        dz /= inputLength;
+      const forwardX = -Math.sin(cameraYaw);
+      const forwardZ = -Math.cos(cameraYaw);
+      const rightX = Math.cos(cameraYaw);
+      const rightZ = -Math.sin(cameraYaw);
+
+      let dx = forwardX * forwardInput + rightX * strafeInput;
+      let dz = forwardZ * forwardInput + rightZ * strafeInput;
+
+      const length = Math.hypot(dx, dz);
+      if (length > 1) {
+        dx /= length;
+        dz /= length;
       }
 
       const speed = 0.16;
       const nextX = THREE.MathUtils.clamp(mech.position.x + dx * speed, -58, 58);
       const nextZ = THREE.MathUtils.clamp(mech.position.z + dz * speed, -58, 58);
 
-      // Keep the mech from walking through standing buildings.
       function blocked(x, z) {
         return buildings.some(building => {
           if (!building.userData.alive) return false;
@@ -375,31 +604,33 @@
       if (!blocked(nextX, mech.position.z)) mech.position.x = nextX;
       if (!blocked(mech.position.x, nextZ)) mech.position.z = nextZ;
 
-      // Turn toward movement, then smoothly follow behind the mech.
+      // Face the direction of travel.
       if (Math.hypot(dx, dz) > 0.08) {
         mech.rotation.y = Math.atan2(-dx, -dz);
       }
 
-      const yaw = mech.rotation.y;
-      const followDistance = 18;
+      // Follow the mech's position while keeping a stable view direction.
+      const followDistance = 19;
       const cameraTarget = new THREE.Vector3(
-        mech.position.x + Math.sin(yaw) * followDistance,
-        12,
-        mech.position.z + Math.cos(yaw) * followDistance
+        mech.position.x + Math.sin(cameraYaw) * followDistance,
+        13,
+        mech.position.z + Math.cos(cameraYaw) * followDistance
       );
 
       camera.position.lerp(cameraTarget, 0.09);
       camera.lookAt(mech.position.x, 1.8, mech.position.z);
+
+      // Gentle mech idle/movement bob
+      mech.position.y = Math.sin(performance.now() * 0.006) * 0.035;
     }
+
+    camera.position.set(0, 13, 19);
 
     function animate() {
       requestAnimationFrame(animate);
       update();
       renderer.render(scene, camera);
     }
-
-    // Start the camera behind the mech.
-    camera.position.set(0, 12, 18);
     animate();
 
     addEventListener("resize", () => {
