@@ -6,50 +6,99 @@
   <title>Mech City 3D</title>
   <style>
     * { box-sizing: border-box; }
+
     html, body {
-      margin: 0; width: 100%; height: 100%; overflow: hidden;
-      background: #9cc5d0; font: 16px system-ui, sans-serif;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #9cc5d0;
+      font: 16px system-ui, sans-serif;
       touch-action: none;
     }
-    canvas { display: block; }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
     #hud {
-      position: fixed; top: 12px; left: 12px; z-index: 2;
-      padding: 10px 14px; border-radius: 12px;
-      color: white; background: #101820dd; line-height: 1.4;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 2;
+      padding: 10px 14px;
+      border-radius: 12px;
+      color: white;
+      background: #101820dd;
+      line-height: 1.4;
       pointer-events: none;
     }
+
     #controls {
-      position: fixed; inset: auto 0 18px; z-index: 3;
-      display: flex; justify-content: space-between; align-items: end;
-      padding: 0 20px; pointer-events: none;
+      position: fixed;
+      inset: auto 0 18px;
+      z-index: 3;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      padding: 0 20px;
+      pointer-events: none;
     }
-    .pad { display: grid; grid-template: repeat(2, 58px) / repeat(3, 58px); gap: 5px; }
+
+    #joystick {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      border: 2px solid #ffffff66;
+      border-radius: 50%;
+      background: #263746aa;
+      touch-action: none;
+      pointer-events: auto;
+      user-select: none;
+    }
+
+    #stick {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 56px;
+      height: 56px;
+      border: 1px solid #ffffff88;
+      border-radius: 50%;
+      background: #d9e3e8dd;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
     button {
-      width: 58px; height: 58px; border: 1px solid #ffffff66;
-      border-radius: 14px; background: #263746df; color: white;
-      font-size: 22px; touch-action: none; user-select: none;
+      width: 82px;
+      height: 82px;
+      border: 1px solid #ffffff66;
+      border-radius: 50%;
+      background: #e85d3fdd;
+      color: white;
+      font-size: 15px;
+      font-weight: 800;
+      touch-action: none;
+      user-select: none;
       pointer-events: auto;
     }
-    button:active { background: #e85d3f; }
-    #smash { width: 82px; height: 82px; border-radius: 50%; font-size: 15px; font-weight: 800; }
-    .empty { visibility: hidden; }
+
+    button:active { background: #ff795b; }
   </style>
 </head>
 <body>
   <div id="hud">
     🏙️ MECH CITY 3D<br>
     <span id="score">Buildings smashed: 0</span><br>
-    <small>Move: WASD / arrows · Smash: Space</small>
+    <small>Joystick to move · WASD/arrows · Space to smash</small>
   </div>
 
   <div id="controls">
-    <div class="pad">
-      <button class="empty" aria-hidden="true"></button>
-      <button data-dir="up" aria-label="Move forward">▲</button>
-      <button class="empty" aria-hidden="true"></button>
-      <button data-dir="left" aria-label="Move left">◀</button>
-      <button data-dir="down" aria-label="Move backward">▼</button>
-      <button data-dir="right" aria-label="Move right">▶</button>
+    <div id="joystick" aria-label="Movement joystick">
+      <div id="stick"></div>
     </div>
     <button id="smash" aria-label="Smash nearby building">SMASH</button>
   </div>
@@ -61,15 +110,19 @@
     scene.background = new THREE.Color(0x9cc5d0);
     scene.fog = new THREE.Fog(0x9cc5d0, 75, 145);
 
-    const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 220);
+    const camera = new THREE.PerspectiveCamera(
+      58, innerWidth / innerHeight, 0.1, 220
+    );
+
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(innerWidth, innerHeight);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
     scene.add(new THREE.HemisphereLight(0xe6f7ff, 0x59615b, 2));
+
     const sun = new THREE.DirectionalLight(0xfff0cf, 3);
     sun.position.set(-25, 45, 30);
     sun.castShadow = true;
@@ -84,38 +137,51 @@
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Road markings
-    const stripeMat = new THREE.MeshBasicMaterial({ color: 0xd7c879 });
+    // Simple road markings
+    const stripeMaterial = new THREE.MeshBasicMaterial({ color: 0xd7c879 });
+
     for (let i = -50; i <= 50; i += 10) {
       for (const z of [-30, -10, 10, 30]) {
-        const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.025, 3), stripeMat);
+        const stripe = new THREE.Mesh(
+          new THREE.BoxGeometry(0.18, 0.025, 3),
+          stripeMaterial
+        );
         stripe.position.set(i, -0.035, z);
         scene.add(stripe);
       }
+
       for (const x of [-30, -10, 10, 30]) {
-        const stripe = new THREE.Mesh(new THREE.BoxGeometry(3, 0.025, 0.18), stripeMat);
+        const stripe = new THREE.Mesh(
+          new THREE.BoxGeometry(3, 0.025, 0.18),
+          stripeMaterial
+        );
         stripe.position.set(x, -0.034, i);
         scene.add(stripe);
       }
     }
 
+    // City buildings
     const buildings = [];
-    const buildingColors = [0x687d89, 0x88786a, 0x637b6b, 0x726f88, 0x9a8064];
+    const buildingColors = [
+      0x687d89, 0x88786a, 0x637b6b, 0x726f88, 0x9a8064
+    ];
 
-    // Buildings are spaced out to leave roads and walkable space.
     for (const x of [-40, -20, 20, 40]) {
       for (const z of [-40, -20, 20, 40]) {
         const width = 8 + Math.random() * 3;
         const depth = 8 + Math.random() * 3;
         const height = 8 + Math.random() * 22;
-        const material = new THREE.MeshStandardMaterial({
-          color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
-          roughness: 0.82
-        });
+
         const building = new THREE.Mesh(
           new THREE.BoxGeometry(width, height, depth),
-          material
+          new THREE.MeshStandardMaterial({
+            color: buildingColors[
+              Math.floor(Math.random() * buildingColors.length)
+            ],
+            roughness: 0.82
+          })
         );
+
         building.position.set(x, height / 2, z);
         building.castShadow = true;
         building.receiveShadow = true;
@@ -134,14 +200,18 @@
       }
     }
 
-    // Build a simple original mech from 3D shapes.
+    // Original mech made from simple 3D shapes
     const mech = new THREE.Group();
     scene.add(mech);
 
-    function part(parent, size, color, position) {
+    function addPart(parent, size, color, position) {
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(...size),
-        new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.18 })
+        new THREE.MeshStandardMaterial({
+          color,
+          roughness: 0.55,
+          metalness: 0.18
+        })
       );
       mesh.position.set(...position);
       mesh.castShadow = true;
@@ -150,19 +220,19 @@
       return mesh;
     }
 
-    part(mech, [1.8, 1.7, 1.2], 0xe85d3f, [0, 2.0, 0]); // torso
-    part(mech, [1.25, 0.8, 1.0], 0xf2c14e, [0, 3.25, 0]); // head
-    part(mech, [0.9, 0.18, 0.12], 0x14242b, [0, 3.3, -0.52]); // visor
-    part(mech, [0.55, 1.45, 0.65], 0xb6c7c9, [-1.3, 2.05, 0]); // arm
-    part(mech, [0.55, 1.45, 0.65], 0xb6c7c9, [1.3, 2.05, 0]); // arm
-    part(mech, [0.65, 1.35, 0.75], 0x344956, [-0.48, 0.85, 0]); // leg
-    part(mech, [0.65, 1.35, 0.75], 0x344956, [0.48, 0.85, 0]); // leg
+    addPart(mech, [1.8, 1.7, 1.2], 0xe85d3f, [0, 2.0, 0]);       // torso
+    addPart(mech, [1.25, 0.8, 1.0], 0xf2c14e, [0, 3.25, 0]);    // head
+    addPart(mech, [0.9, 0.18, 0.12], 0x14242b, [0, 3.3, -0.52]); // visor
+    addPart(mech, [0.55, 1.45, 0.65], 0xb6c7c9, [-1.3, 2.05, 0]); // arm
+    addPart(mech, [0.55, 1.45, 0.65], 0xb6c7c9, [1.3, 2.05, 0]);  // arm
+    addPart(mech, [0.65, 1.35, 0.75], 0x344956, [-0.48, 0.85, 0]); // leg
+    addPart(mech, [0.65, 1.35, 0.75], 0x344956, [0.48, 0.85, 0]);  // leg
 
+    // Keyboard and joystick input
     const keys = new Set();
-    const held = new Set();
-    let smashed = 0;
-    let message = "";
-    let messageUntil = 0;
+    let joyX = 0;
+    let joyY = 0;
+    let joystickPointer = null;
 
     addEventListener("keydown", event => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
@@ -171,70 +241,120 @@
       keys.add(event.key.toLowerCase());
       if (event.key === " ") smash();
     });
-    addEventListener("keyup", event => keys.delete(event.key.toLowerCase()));
 
-    document.querySelectorAll("[data-dir]").forEach(button => {
-      const dir = button.dataset.dir;
-      button.addEventListener("pointerdown", event => {
-        event.preventDefault();
-        button.setPointerCapture(event.pointerId);
-        held.add(dir);
-      });
-      const release = () => held.delete(dir);
-      button.addEventListener("pointerup", release);
-      button.addEventListener("pointercancel", release);
-      button.addEventListener("lostpointercapture", release);
+    addEventListener("keyup", event => {
+      keys.delete(event.key.toLowerCase());
     });
+
+    const joystick = document.querySelector("#joystick");
+    const stick = document.querySelector("#stick");
+
+    function moveJoystick(event) {
+      const rect = joystick.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      let dx = event.clientX - centerX;
+      let dy = event.clientY - centerY;
+      const maxRadius = 44;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance > maxRadius) {
+        dx = dx / distance * maxRadius;
+        dy = dy / distance * maxRadius;
+      }
+
+      joyX = dx / maxRadius;
+      joyY = dy / maxRadius;
+      stick.style.left = `${50 + dx / maxRadius * 34}%`;
+      stick.style.top = `${50 + dy / maxRadius * 34}%`;
+    }
+
+    function resetJoystick() {
+      joyX = 0;
+      joyY = 0;
+      joystickPointer = null;
+      stick.style.left = "50%";
+      stick.style.top = "50%";
+    }
+
+    joystick.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      joystickPointer = event.pointerId;
+      joystick.setPointerCapture(event.pointerId);
+      moveJoystick(event);
+    });
+
+    joystick.addEventListener("pointermove", event => {
+      if (event.pointerId === joystickPointer) moveJoystick(event);
+    });
+
+    joystick.addEventListener("pointerup", resetJoystick);
+    joystick.addEventListener("pointercancel", resetJoystick);
+
     document.querySelector("#smash").addEventListener("pointerdown", event => {
       event.preventDefault();
       smash();
     });
 
+    let smashed = 0;
+
     function smash() {
       let target = null;
       let nearest = 9;
-      for (const b of buildings) {
-        if (!b.userData.alive) continue;
-        const distance = Math.hypot(b.position.x - mech.position.x, b.position.z - mech.position.z);
+
+      for (const building of buildings) {
+        if (!building.userData.alive) continue;
+
+        const distance = Math.hypot(
+          building.position.x - mech.position.x,
+          building.position.z - mech.position.z
+        );
+
         if (distance < nearest) {
           nearest = distance;
-          target = b;
+          target = building;
         }
       }
 
-      if (target) {
-        target.userData.alive = false;
-        target.visible = false;
-        target.userData.roof.visible = false;
+      if (!target) return;
 
-        const rubble = new THREE.Mesh(
-          new THREE.BoxGeometry(target.userData.width, 0.45, target.userData.depth),
-          new THREE.MeshStandardMaterial({ color: 0x76685a, roughness: 1 })
-        );
-        rubble.position.set(target.userData.x, 0.22, target.userData.z);
-        rubble.receiveShadow = true;
-        scene.add(rubble);
+      target.userData.alive = false;
+      target.visible = false;
+      target.userData.roof.visible = false;
 
-        smashed++;
-        document.querySelector("#score").textContent = `Buildings smashed: ${smashed}`;
-        message = "CRUNCH!";
-      } else {
-        message = "Get closer to a building!";
-      }
-      messageUntil = performance.now() + 900;
-    }
+      const rubble = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          target.userData.width,
+          0.45,
+          target.userData.depth
+        ),
+        new THREE.MeshStandardMaterial({ color: 0x76685a, roughness: 1 })
+      );
 
-    function pressed(dir, ...names) {
-      return held.has(dir) || names.some(name => keys.has(name));
+      rubble.position.set(target.userData.x, 0.22, target.userData.z);
+      rubble.receiveShadow = true;
+      scene.add(rubble);
+
+      smashed++;
+      document.querySelector("#score").textContent =
+        `Buildings smashed: ${smashed}`;
     }
 
     function update() {
-      let dx = 0, dz = 0;
-      if (pressed("left", "a", "arrowleft")) dx--;
-      if (pressed("right", "d", "arrowright")) dx++;
-      if (pressed("up", "w", "arrowup")) dz--;
-      if (pressed("down", "s", "arrowdown")) dz++;
-      if (dx && dz) { dx *= Math.SQRT1_2; dz *= Math.SQRT1_2; }
+      let dx = joyX;
+      let dz = joyY;
+
+      if (keys.has("a") || keys.has("arrowleft")) dx--;
+      if (keys.has("d") || keys.has("arrowright")) dx++;
+      if (keys.has("w") || keys.has("arrowup")) dz--;
+      if (keys.has("s") || keys.has("arrowdown")) dz++;
+
+      const inputLength = Math.hypot(dx, dz);
+      if (inputLength > 1) {
+        dx /= inputLength;
+        dz /= inputLength;
+      }
 
       const speed = 0.16;
       const nextX = THREE.MathUtils.clamp(mech.position.x + dx * speed, -58, 58);
@@ -242,45 +362,51 @@
 
       // Keep the mech from walking through standing buildings.
       function blocked(x, z) {
-        return buildings.some(b => {
-          if (!b.userData.alive) return false;
-          return Math.abs(x - b.position.x) < b.userData.width / 2 + 1.2 &&
-                 Math.abs(z - b.position.z) < b.userData.depth / 2 + 1.2;
+        return buildings.some(building => {
+          if (!building.userData.alive) return false;
+
+          return Math.abs(x - building.position.x) <
+                   building.userData.width / 2 + 1.2 &&
+                 Math.abs(z - building.position.z) <
+                   building.userData.depth / 2 + 1.2;
         });
       }
+
       if (!blocked(nextX, mech.position.z)) mech.position.x = nextX;
       if (!blocked(mech.position.x, nextZ)) mech.position.z = nextZ;
 
-      if (dx || dz) mech.rotation.y = Math.atan2(dx, dz) + Math.PI;
+      // Turn toward movement, then smoothly follow behind the mech.
+      if (Math.hypot(dx, dz) > 0.08) {
+        mech.rotation.y = Math.atan2(-dx, -dz);
+      }
 
-      const targetCamera = new THREE.Vector3(
-        mech.position.x,
-        13,
-        mech.position.z + 18
+      const yaw = mech.rotation.y;
+      const followDistance = 18;
+      const cameraTarget = new THREE.Vector3(
+        mech.position.x + Math.sin(yaw) * followDistance,
+        12,
+        mech.position.z + Math.cos(yaw) * followDistance
       );
-      camera.position.lerp(targetCamera, 0.08);
-      camera.lookAt(mech.position.x, 1.2, mech.position.z);
+
+      camera.position.lerp(cameraTarget, 0.09);
+      camera.lookAt(mech.position.x, 1.8, mech.position.z);
     }
 
     function animate() {
       requestAnimationFrame(animate);
       update();
-
-      if (performance.now() < messageUntil) {
-        document.title = `${message} — Mech City 3D`;
-      } else {
-        document.title = "Mech City 3D";
-      }
-
       renderer.render(scene, camera);
     }
+
+    // Start the camera behind the mech.
+    camera.position.set(0, 12, 18);
     animate();
 
     addEventListener("resize", () => {
       camera.aspect = innerWidth / innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(innerWidth, innerHeight);
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     });
   </script>
 </body>
