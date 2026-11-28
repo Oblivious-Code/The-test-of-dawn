@@ -1,1102 +1,226 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>GRAND MECHA AUTO VI: 3D HOUSE CITY V3</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Mech City</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Noto+Sans+JP:wght@700;900&display=swap');
-
-    * {
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-user-select: none;
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; width: 100%; height: 100%; overflow: hidden;
+      background: #101820; color: white; font: 16px system-ui, sans-serif;
       touch-action: none;
-      margin: 0;
-      padding: 0;
     }
-
-    body {
-      background: #070510;
-      color: #fff;
-      font-family: 'Chakra Petch', 'Noto Sans JP', sans-serif;
-      overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    #phone-frame {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      max-width: 460px;
-      max-height: 920px;
-      background: #0b0718;
-      overflow: hidden;
-      box-shadow: 0 0 60px rgba(255, 0, 128, 0.35), 0 0 120px rgba(0, 240, 255, 0.2);
-      border: 2px solid rgba(255, 255, 255, 0.12);
-    }
-
-    @media (min-width: 500px) {
-      #phone-frame {
-        height: 94vh;
-        border-radius: 34px;
-        border: 4px solid #231b3d;
-      }
-    }
-
-    #canvas-host {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-    }
-
-    #splash-screen {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 50% 25%, #3a0d4e 0%, #0d061f 65%, #05020c 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      padding: 26px 20px;
-      z-index: 30;
-      text-align: center;
-    }
-
-    .bootleg-badge {
-      background: linear-gradient(90deg, #ff007f, #ffae00);
-      color: #000;
-      font-weight: 900;
-      font-size: 11px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-    }
-
-    .title-jp {
-      font-family: 'Noto Sans JP', sans-serif;
-      font-size: 14px;
-      color: #00f0ff;
-      letter-spacing: 4px;
-    }
-
-    .title-main {
-      font-size: 38px;
-      line-height: 0.92;
-      font-weight: 700;
-      font-style: italic;
-      text-transform: uppercase;
-      background: linear-gradient(180deg, #ffffff 15%, #ff6ec7 55%, #ff007f 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin: 6px 0;
-    }
-
-    .title-vi {
-      font-size: 54px;
-      font-weight: 900;
-      font-style: italic;
-      line-height: 0.85;
-      background: linear-gradient(135deg, #ffe600 0%, #ff5e00 50%, #ff0080 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .sub-edition {
-      font-size: 12px;
-      color: #ffd6f6;
-      letter-spacing: 1.8px;
-      margin-top: 6px;
-    }
-
-    .mech-selector {
-      width: 100%;
-      background: rgba(14, 10, 32, 0.85);
-      border: 1px solid rgba(0, 240, 255, 0.35);
-      border-radius: 16px;
-      padding: 12px;
-    }
-
-    .mech-selector-label {
-      font-size: 11px;
-      color: #00f0ff;
-      letter-spacing: 1.5px;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-
-    .mech-cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .mech-card {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1.5px solid rgba(255, 255, 255, 0.15);
-      border-radius: 10px;
-      padding: 8px 4px;
-      cursor: pointer;
-    }
-
-    .mech-card.active {
-      border-color: #ff007f;
-      background: rgba(255, 0, 127, 0.22);
-      box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
-    }
-
-    .mech-card .code {
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .mech-card .role {
-      font-size: 10px;
-      color: #a9b4d0;
-      margin-top: 2px;
-    }
-
-    #start-btn {
-      width: 100%;
-      padding: 15px;
-      border: none;
-      border-radius: 14px;
-      background: linear-gradient(90deg, #ff007f, #ff6a00);
-      color: #fff;
-      font-family: inherit;
-      font-size: 19px;
-      font-weight: 700;
-      font-style: italic;
-      letter-spacing: 1.5px;
-      cursor: pointer;
-    }
-
-    .fake-store-note {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.5);
-    }
-
+    canvas { display: block; width: 100%; height: 100%; }
     #hud {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 10;
-      display: none;
+      position: fixed; top: 12px; left: 12px; z-index: 2;
+      padding: 10px 14px; border-radius: 12px;
+      background: #101820d9; line-height: 1.4; pointer-events: none;
     }
-
-    .hud-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 14px 14px 0;
+    #controls {
+      position: fixed; inset: auto 0 18px; display: flex;
+      justify-content: space-between; align-items: end;
+      padding: 0 20px; z-index: 3; pointer-events: none;
     }
-
-    .peace-tag {
-      background: rgba(10, 18, 30, 0.82);
-      border: 1px solid rgba(0, 240, 255, 0.45);
-      border-radius: 12px;
-      padding: 8px 11px;
-      font-size: 11px;
-      color: #9ceeff;
-      line-height: 1.35;
+    .pad { display: grid; grid-template: repeat(2, 58px) / repeat(3, 58px); gap: 5px; }
+    button {
+      border: 1px solid #ffffff55; border-radius: 14px;
+      background: #263746df; color: white; font-size: 22px;
+      width: 58px; height: 58px; touch-action: none;
+      pointer-events: auto; user-select: none;
     }
-
-    .peace-tag strong {
-      color: #52ff7f;
-      display: block;
-      font-size: 12px;
-    }
-
-    .gta-stats {
-      text-align: right;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
-    }
-
-    .wanted-stars {
-      font-size: 18px;
-      letter-spacing: 2px;
-      text-shadow: 0 2px 4px #000;
-    }
-
-    .star-on {
-      color: #ffe600;
-      filter: drop-shadow(0 0 6px #ff9900);
-    }
-
-    .star-off {
-      color: rgba(255, 255, 255, 0.22);
-    }
-
-    .money-display {
-      font-size: 22px;
-      font-weight: 700;
-      color: #52ff7f;
-      text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
-    }
-
-    .bars-row {
-      display: flex;
-      gap: 6px;
-      width: 138px;
-    }
-
-    .bar-bg {
-      flex: 1;
-      height: 8px;
-      background: rgba(0, 0, 0, 0.75);
-      border: 1.5px solid #000;
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    #hp-fill {
-      width: 100%;
-      height: 100%;
-      background: #4cd964;
-    }
-
-    #boost-fill {
-      width: 100%;
-      height: 100%;
-      background: #00d2ff;
-    }
-
-    #event-banner {
-      position: absolute;
-      top: 104px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(10, 6, 24, 0.85);
-      border: 1px solid rgba(255, 0, 127, 0.65);
-      padding: 5px 14px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      color: #ffe600;
-      white-space: nowrap;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      opacity: 0;
-      transition: opacity 0.25s;
-    }
-
-    .touch-controls {
-      position: absolute;
-      bottom: 18px;
-      left: 0;
-      right: 0;
-      padding: 0 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      pointer-events: auto;
-    }
-
-    .joystick-zone {
-      width: 118px;
-      height: 118px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      border: 2px solid rgba(0, 240, 255, 0.4);
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    #joystick-knob {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #00f0ff, #0066ff);
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
-      position: absolute;
-    }
-
-    .action-cluster {
-      display: grid;
-      grid-template-columns: repeat(2, 62px);
-      gap: 10px;
-      align-items: center;
-    }
-
-    .action-btn {
-      width: 62px;
-      height: 62px;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.35);
-      color: #fff;
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 11px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-    }
-
-    .action-btn:active {
-      transform: scale(0.91);
-    }
-
-    #btn-fire {
-      background: radial-gradient(circle, #ff2a6d, #990033);
-      border-color: #ff7aa2;
-      grid-column: 2;
-      width: 72px;
-      height: 72px;
-      font-size: 13px;
-    }
-
-    #btn-boost {
-      background: radial-gradient(circle, #00d2ff, #0051a8);
-      border-color: #8ceaff;
-    }
-
-    #btn-swap {
-      background: radial-gradient(circle, #ffae00, #995200);
-      border-color: #ffe082;
-      font-size: 10px;
-    }
+    button:active { background: #e85d3f; }
+    #smash { width: 82px; height: 82px; border-radius: 50%; font-size: 15px; font-weight: 800; }
+    .empty { visibility: hidden; }
+    @media (hover: hover) and (pointer: fine) { #controls { opacity: .55; } }
   </style>
 </head>
 <body>
-  <div id="phone-frame">
-    <div id="canvas-host"></div>
+  <div id="hud">🏙️ MECH CITY<br><span id="score">Buildings smashed: 0</span><br><small>Move: WASD / arrows · Smash: Space</small></div>
+  <canvas id="game"></canvas>
 
-    <div id="splash-screen">
-      <div class="bootleg-badge">★ 3D HOUSE CITY • ONLINE TEXTURES + FREE LOOK ★</div>
-
-      <div>
-        <div class="title-jp">グランド・メカ・オート</div>
-        <div class="title-main">GRAND MECHA<br>AUTO</div>
-        <div class="title-vi">VI</div>
-        <div class="sub-edition">3D HOUSE NEIGHBORHOOD EDITION V3</div>
-      </div>
-
-      <div class="mech-selector">
-        <div class="mech-selector-label">Choose Your Walking Mecha</div>
-        <div class="mech-cards">
-          <div class="mech-card active" data-mech="0">
-            <div class="code">RX-06 RONIN</div>
-            <div class="role">Balanced Walker</div>
-          </div>
-          <div class="mech-card" data-mech="1">
-            <div class="code">MZ-99 KAIJU</div>
-            <div class="role">Heavy Smasher</div>
-          </div>
-          <div class="mech-card" data-mech="2">
-            <div class="code">AE-86 DRIFT</div>
-            <div class="role">Fast Sprinter</div>
-          </div>
-        </div>
-      </div>
-
-      <button id="start-btn">WALK IN 3D CITY</button>
-      <div class="fake-store-note">Stick / WASD to Walk • Drag Anywhere to Look 360° • Space = Blast</div>
+  <div id="controls">
+    <div class="pad">
+      <button class="empty" aria-hidden="true"></button>
+      <button data-dir="up" aria-label="Move up">▲</button>
+      <button class="empty" aria-hidden="true"></button>
+      <button data-dir="left" aria-label="Move left">◀</button>
+      <button data-dir="down" aria-label="Move down">▼</button>
+      <button data-dir="right" aria-label="Move right">▶</button>
     </div>
-
-    <div id="hud">
-      <div class="hud-top">
-        <div class="peace-tag">
-          <strong>FREE 360° LOOK</strong>
-          Drag Screen to Aim/Look<br>Police Never Chase
-        </div>
-        <div class="gta-stats">
-          <div class="wanted-stars" id="stars-box">
-            <span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span>
-          </div>
-          <div class="money-display" id="yen-box">¥0</div>
-          <div class="bars-row">
-            <div class="bar-bg"><div id="hp-fill"></div></div>
-            <div class="bar-bg"><div id="boost-fill"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="event-banner">WANTED LEVEL UP</div>
-
-      <div class="touch-controls">
-        <div class="joystick-zone" id="joystick-zone">
-          <div id="joystick-knob"></div>
-        </div>
-        <div class="action-cluster">
-          <button class="action-btn" id="btn-swap">MECHA<br>SWAP</button>
-          <button class="action-btn" id="btn-boost">SPRINT</button>
-          <button class="action-btn" id="btn-fire">BLAST</button>
-        </div>
-      </div>
-    </div>
+    <button id="smash" aria-label="Smash nearby building">SMASH</button>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script>
-    const host = document.getElementById('canvas-host');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x140b2e);
-    scene.fog = new THREE.FogExp2(0x140b2e, 0.009);
+<script>
+(() => {
+  const canvas = document.querySelector("#game");
+  const ctx = canvas.getContext("2d");
+  const scoreText = document.querySelector("#score");
 
-    const camera = new THREE.PerspectiveCamera(60, host.clientWidth / host.clientHeight, 0.1, 240);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(host.clientWidth, host.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    host.appendChild(renderer.domElement);
+  let w, h, dpr;
+  function resize() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    w = innerWidth; h = innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  addEventListener("resize", resize); resize();
 
-    window.addEventListener('resize', () => {
-      camera.aspect = host.clientWidth / host.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(host.clientWidth, host.clientHeight);
-    });
+  const world = { width: 2200, height: 1600 };
+  const mech = { x: 1100, y: 800, size: 28, speed: 3.2 };
+  const keys = new Set();
+  const held = new Set();
+  let smashed = 0, messageUntil = 0, message = "";
 
-    // Lighting
-    const hemiLight = new THREE.HemisphereLight(0xffb6f9, 0x1b2447, 1.2);
-    scene.add(hemiLight);
-    const dirLight = new THREE.DirectionalLight(0x00f0ff, 0.95);
-    dirLight.position.set(25, 45, 20);
-    scene.add(dirLight);
-
-    // Load online art textures (with safe fallback if offline/blocked)
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin('anonymous');
-
-    function makeFallbackTex(bg, fg, label) {
-      const c = document.createElement('canvas');
-      c.width = 128; c.height = 128;
-      const g = c.getContext('2d');
-      g.fillStyle = bg; g.fillRect(0, 0, 128, 128);
-      g.strokeStyle = fg; g.lineWidth = 4;
-      g.strokeRect(6, 6, 116, 116);
-      g.fillStyle = fg; g.font = 'bold 18px sans-serif';
-      g.fillText(label, 18, 70);
-      const t = new THREE.CanvasTexture(c);
-      t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      return t;
-    }
-
-    const streetTex = loader.load(
-      'https://threejs.org/examples/textures/hardwood2_diffuse.jpg',
-      undefined,
-      undefined,
-      () => {}
-    );
-    streetTex.wrapS = streetTex.wrapT = THREE.RepeatWrapping;
-    streetTex.repeat.set(28, 28);
-
-    const houseWallTex = loader.load(
-      'https://threejs.org/examples/textures/brick_diffuse.jpg',
-      undefined,
-      undefined,
-      () => {}
-    );
-    houseWallTex.wrapS = houseWallTex.wrapT = THREE.RepeatWrapping;
-
-    const mechArmorTex = loader.load(
-      'https://threejs.org/examples/textures/uv_grid_opengl.jpg',
-      undefined,
-      undefined,
-      () => {}
-    );
-
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(240, 240),
-      new THREE.MeshStandardMaterial({ color: 0x222742, map: streetTex, roughness: 0.85 })
-    );
-    ground.rotation.x = -Math.PI / 2;
-    scene.add(ground);
-
-    const gridHelper = new THREE.GridHelper(240, 30, 0xff007f, 0x2d385c);
-    gridHelper.position.y = 0.02;
-    scene.add(gridHelper);
-
-    const MECHAS = [
-      { name: 'RX-06 RONIN', color: 0xff007f, accent: 0x00f0ff, speed: 13, fireRate: 150 },
-      { name: 'MZ-99 KAIJU', color: 0xff5e00, accent: 0xffe600, speed: 10.5, fireRate: 240 },
-      { name: 'AE-86 DRIFT', color: 0xf4f4f8, accent: 0xff1e56, speed: 16, fireRate: 120 }
-    ];
-
-    let selectedMech = 0;
-    let gameRunning = false;
-    let yen = 0;
-    let wanted = 0;
-    let hp = 100;
-    let boost = 100;
-    let isBoosting = false;
-    let isFiring = false;
-    let lastShot = 0;
-    let walkCycle = 0;
-
-    // Independent 360° Camera Look Angles (no auto-fight with joystick)
-    let lookYaw = 0;
-    let lookPitch = 0.42;
-
-    // Build Walking Mecha with online armor texture art
-    const mechaGroup = new THREE.Group();
-    const leftLeg = new THREE.Group();
-    const rightLeg = new THREE.Group();
-
-    function buildMecha() {
-      while (mechaGroup.children.length > 0) mechaGroup.remove(mechaGroup.children[0]);
-      leftLeg.clear();
-      rightLeg.clear();
-
-      const preset = MECHAS[selectedMech];
-      const torsoMat = new THREE.MeshStandardMaterial({
-        color: preset.color,
-        map: mechArmorTex,
-        roughness: 0.35,
-        metalness: 0.4
+  // Buildings sit between wide, walkable city streets.
+  const buildings = [];
+  for (let y = 100; y < world.height - 100; y += 230) {
+    for (let x = 100; x < world.width - 100; x += 260) {
+      buildings.push({
+        x: x + 25 + Math.random() * 25,
+        y: y + 25 + Math.random() * 25,
+        w: 90 + Math.random() * 55,
+        h: 90 + Math.random() * 55,
+        color: ["#526779", "#78685d", "#536b61", "#655f79"][Math.floor(Math.random() * 4)],
+        alive: true
       });
-      const accentMat = new THREE.MeshStandardMaterial({
-        color: preset.accent,
-        emissive: preset.accent,
-        emissiveIntensity: 0.35
-      });
-      const darkMat = new THREE.MeshStandardMaterial({ color: 0x1d2138, roughness: 0.6 });
-
-      const legGeo = new THREE.BoxGeometry(0.65, 1.5, 0.75);
-      const lMesh = new THREE.Mesh(legGeo, darkMat);
-      lMesh.position.y = -0.75;
-      leftLeg.add(lMesh);
-      leftLeg.position.set(-0.55, 1.5, 0);
-
-      const rMesh = new THREE.Mesh(legGeo, darkMat);
-      rMesh.position.y = -0.75;
-      rightLeg.add(rMesh);
-      rightLeg.position.set(0.55, 1.5, 0);
-
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.7, 1.2), torsoMat);
-      torso.position.y = 2.35;
-
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.8, 0.95), accentMat);
-      head.position.y = 3.6;
-
-      const visor = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 0.2), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-      visor.position.set(0, 3.65, 0.45);
-
-      const cannonL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 1.4), darkMat);
-      cannonL.position.set(-1.15, 2.7, 0.3);
-      const cannonR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 1.4), darkMat);
-      cannonR.position.set(1.15, 2.7, 0.3);
-
-      mechaGroup.add(leftLeg, rightLeg, torso, head, visor, cannonL, cannonR);
     }
+  }
 
-    buildMecha();
-    scene.add(mechaGroup);
+  addEventListener("keydown", e => {
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+    keys.add(e.key.toLowerCase());
+    if (e.key === " ") smash();
+  });
+  addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
 
-    const houses = [];
-    const vehicles = [];
-    const pickups = [];
-    const projectiles = [];
+  document.querySelectorAll("[data-dir]").forEach(button => {
+    const dir = button.dataset.dir;
+    button.addEventListener("pointerdown", e => {
+      e.preventDefault(); button.setPointerCapture(e.pointerId); held.add(dir);
+    });
+    const release = () => held.delete(dir);
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("lostpointercapture", release);
+  });
+  document.querySelector("#smash").addEventListener("pointerdown", e => {
+    e.preventDefault(); smash();
+  });
 
-    const houseColors = [0xf7e1c6, 0xd8e2dc, 0xffe5d9, 0xcad2c5, 0xfde2e4, 0xfff1d0];
-    const roofColors = [0x3b4d7a, 0x8d3b3b, 0x2f4858, 0x5c4d7d];
-    const carColors = [0x00d2ff, 0xffbe0b, 0x8338ec, 0xfb5607, 0x3a86ff, 0xff006e];
-    const STREET_LINES = [-80, -64, -48, -32, -16, 0, 16, 32, 48, 64, 80];
-
-    function createCarMesh(isPolice, colorHex) {
-      const car = new THREE.Group();
-      const bodyMat = new THREE.MeshStandardMaterial({
-        color: isPolice ? 0x161b2e : colorHex,
-        map: mechArmorTex,
-        roughness: 0.4,
-        metalness: 0.3
-      });
-      const cabinMat = new THREE.MeshStandardMaterial({
-        color: isPolice ? 0xf8fafc : 0x232942,
-        roughness: 0.5
-      });
-
-      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.9, 4.2), bodyMat);
-      chassis.position.y = 0.65;
-
-      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 2.1), cabinMat);
-      cabin.position.set(0, 1.35, -0.2);
-
-      car.add(chassis, cabin);
-
-      let sirenA = null, sirenB = null;
-      if (isPolice) {
-        sirenA = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.25, 0.35), new THREE.MeshBasicMaterial({ color: 0xff1e56 }));
-        sirenA.position.set(-0.45, 1.8, -0.2);
-        sirenB = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.25, 0.35), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
-        sirenB.position.set(0.45, 1.8, -0.2);
-        car.add(sirenA, sirenB);
-      }
-
-      return { car, sirenA, sirenB };
+  function smash() {
+    let target = null, best = 125;
+    for (const b of buildings) {
+      if (!b.alive) continue;
+      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      const distance = Math.hypot(cx - mech.x, cy - mech.y);
+      if (distance < best) { best = distance; target = b; }
     }
+    if (target) {
+      target.alive = false;
+      smashed++;
+      scoreText.textContent = `Buildings smashed: ${smashed}`;
+      message = "CRUNCH!";
+      messageUntil = performance.now() + 700;
+    } else {
+      message = "Get closer to a building!";
+      messageUntil = performance.now() + 700;
+    }
+  }
 
-    function populateWorld() {
-      houses.forEach(h => scene.remove(h.mesh));
-      vehicles.forEach(v => scene.remove(v.car));
-      pickups.forEach(p => scene.remove(p.mesh));
-      houses.length = 0;
-      vehicles.length = 0;
-      pickups.length = 0;
+  function down(dir, ...keyboard) {
+    return held.has(dir) || keyboard.some(k => keys.has(k));
+  }
 
-      for (let bx = -72; bx <= 72; bx += 16) {
-        for (let bz = -72; bz <= 72; bz += 16) {
-          if (Math.hypot(bx, bz) < 10) continue;
-          if (Math.random() < 0.14) continue;
+  function update() {
+    let dx = 0, dy = 0;
+    if (down("left", "a", "arrowleft")) dx--;
+    if (down("right", "d", "arrowright")) dx++;
+    if (down("up", "w", "arrowup")) dy--;
+    if (down("down", "s", "arrowdown")) dy++;
+    if (dx && dy) { dx *= Math.SQRT1_2; dy *= Math.SQRT1_2; }
 
-          const hGroup = new THREE.Group();
-          const w = 5.4 + Math.random() * 2.0;
-          const d = 5.4 + Math.random() * 2.0;
-          const h = 3.6 + Math.random() * 2.4;
+    mech.x = Math.max(25, Math.min(world.width - 25, mech.x + dx * mech.speed));
+    mech.y = Math.max(25, Math.min(world.height - 25, mech.y + dy * mech.speed));
+  }
 
-          const walls = new THREE.Mesh(
-            new THREE.BoxGeometry(w, h, d),
-            new THREE.MeshStandardMaterial({
-              color: houseColors[Math.floor(Math.random() * houseColors.length)],
-              map: houseWallTex,
-              roughness: 0.75
-            })
-          );
-          walls.position.y = h / 2;
+  function draw() {
+    const camX = Math.max(0, Math.min(world.width - w, mech.x - w / 2));
+    const camY = Math.max(0, Math.min(world.height - h, mech.y - h / 2));
 
-          const roof = new THREE.Mesh(
-            new THREE.ConeGeometry(Math.max(w, d) * 0.76, 2.2, 4),
-            new THREE.MeshStandardMaterial({ color: roofColors[Math.floor(Math.random() * roofColors.length)], roughness: 0.6 })
-          );
-          roof.position.y = h + 1.1;
-          roof.rotation.y = Math.PI / 4;
+    ctx.fillStyle = "#26353a";
+    ctx.fillRect(0, 0, w, h);
 
-          const win = new THREE.Mesh(
-            new THREE.BoxGeometry(1.1, 1.0, 0.15),
-            new THREE.MeshBasicMaterial({ color: 0xffe680 })
-          );
-          win.position.set(0, h * 0.55, d / 2 + 0.05);
+    // Street grid
+    ctx.fillStyle = "#39464a";
+    for (let x = 0; x < world.width; x += 260) ctx.fillRect(x - camX, 0, 180, h);
+    for (let y = 0; y < world.height; y += 230) ctx.fillRect(0, y - camY, w, 150);
 
-          hGroup.add(walls, roof, win);
-          hGroup.position.set(bx, 0, bz);
-          scene.add(hGroup);
+    // Road markings
+    ctx.strokeStyle = "#d5c27a66";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([18, 18]);
+    for (let x = 90; x < world.width; x += 260) {
+      ctx.beginPath(); ctx.moveTo(x - camX, 0); ctx.lineTo(x - camX, h); ctx.stroke();
+    }
+    for (let y = 75; y < world.height; y += 230) {
+      ctx.beginPath(); ctx.moveTo(0, y - camY); ctx.lineTo(w, y - camY); ctx.stroke();
+    }
+    ctx.setLineDash([]);
 
-          houses.push({
-            mesh: hGroup,
-            x: bx,
-            z: bz,
-            radius: Math.max(w, d) * 0.52,
-            hp: 60,
-            intact: true
-          });
+    // Buildings
+    for (const b of buildings) {
+      if (!b.alive) {
+        ctx.fillStyle = "#514b45";
+        ctx.fillRect(b.x - camX, b.y - camY, b.w, b.h);
+        ctx.fillStyle = "#8b7760";
+        for (let i = 0; i < 5; i++) {
+          ctx.fillRect(b.x - camX + Math.random() * b.w, b.y - camY + Math.random() * b.h, 4, 4);
         }
+        continue;
       }
-
-      for (let i = 0; i < 22; i++) {
-        const isPolice = i % 3 === 0;
-        const alongX = i % 2 === 0;
-        const laneCoord = STREET_LINES[Math.floor(Math.random() * STREET_LINES.length)];
-        const dir = Math.random() < 0.5 ? 1 : -1;
-        const posAlong = (Math.random() - 0.5) * 160;
-
-        const { car, sirenA, sirenB } = createCarMesh(
-          isPolice,
-          carColors[Math.floor(Math.random() * carColors.length)]
-        );
-
-        const x = alongX ? posAlong : laneCoord;
-        const z = alongX ? laneCoord : posAlong;
-        car.position.set(x, 0, z);
-        car.rotation.y = alongX ? (dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (dir > 0 ? 0 : Math.PI);
-        scene.add(car);
-
-        vehicles.push({
-          car,
-          sirenA,
-          sirenB,
-          isPolice,
-          alongX,
-          dir,
-          speed: isPolice ? 9.5 : 8 + Math.random() * 5,
-          hp: isPolice ? 75 : 40,
-          alive: true
-        });
-      }
-
-      for (let i = 0; i < 24; i++) {
-        spawnPickup();
-      }
+      ctx.fillStyle = "#00000055";
+      ctx.fillRect(b.x - camX + 7, b.y - camY + 8, b.w, b.h);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(b.x - camX, b.y - camY, b.w, b.h);
+      ctx.fillStyle = "#ffffff22";
+      ctx.fillRect(b.x - camX + 8, b.y - camY + 8, b.w - 16, 8);
+      ctx.fillStyle = "#b9d7d755";
+      for (let wx = 12; wx < b.w - 8; wx += 22)
+        for (let wy = 22; wy < b.h - 8; wy += 25)
+          ctx.fillRect(b.x - camX + wx, b.y - camY + wy, 8, 9);
     }
 
-    function spawnPickup() {
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(1.1, 0.7, 1.1),
-        new THREE.MeshStandardMaterial({ color: 0x52ff7f, emissive: 0x188038, emissiveIntensity: 0.5 })
-      );
-      const x = (Math.random() - 0.5) * 150;
-      const z = (Math.random() - 0.5) * 150;
-      mesh.position.set(x, 0.8, z);
-      scene.add(mesh);
-      pickups.push({ mesh, x, z });
+    // Mech
+    const x = mech.x - camX, y = mech.y - camY;
+    ctx.fillStyle = "#0008";
+    ctx.beginPath(); ctx.ellipse(x, y + 18, 25, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#e85d3f";
+    ctx.fillRect(x - 17, y - 20, 34, 38);
+    ctx.fillStyle = "#f2c14e";
+    ctx.fillRect(x - 13, y - 31, 26, 17);
+    ctx.fillStyle = "#15232a";
+    ctx.fillRect(x - 8, y - 26, 16, 6);
+    ctx.fillStyle = "#b5c5c8";
+    ctx.fillRect(x - 25, y - 10, 8, 21);
+    ctx.fillRect(x + 17, y - 10, 8, 21);
+    ctx.fillStyle = "#263746";
+    ctx.fillRect(x - 14, y + 17, 10, 10);
+    ctx.fillRect(x + 4, y + 17, 10, 10);
+
+    if (performance.now() < messageUntil) {
+      ctx.font = "bold 22px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "white";
+      ctx.fillText(message, x, y - 48);
     }
+  }
 
-    function showBanner(text) {
-      const el = document.getElementById('event-banner');
-      el.textContent = text;
-      el.style.opacity = '1';
-      clearTimeout(el._t);
-      el._t = setTimeout(() => { el.style.opacity = '0'; }, 2000);
-    }
-
-    function updateHUD() {
-      document.getElementById('yen-box').textContent = '¥' + yen.toLocaleString();
-      let starsHtml = '';
-      for (let i = 1; i <= 5; i++) {
-        starsHtml += `<span class="${i <= wanted ? 'star-on' : 'star-off'}">★</span>`;
-      }
-      document.getElementById('stars-box').innerHTML = starsHtml;
-      document.getElementById('hp-fill').style.width = Math.max(0, hp) + '%';
-      document.getElementById('boost-fill').style.width = Math.max(0, boost) + '%';
-    }
-
-    function addWantedStarCheck() {
-      const nextWanted = Math.min(5, Math.floor(yen / 25000));
-      if (nextWanted > wanted) {
-        wanted = nextWanted;
-        showBanner(`★ ${wanted}-STAR WANTED — POLICE DO NOT CHASE`);
-      }
-    }
-
-    document.querySelectorAll('.mech-card').forEach(card => {
-      card.addEventListener('click', () => {
-        document.querySelectorAll('.mech-card').forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        selectedMech = parseInt(card.dataset.mech, 10);
-        buildMecha();
-      });
-    });
-
-    document.getElementById('start-btn').addEventListener('click', () => {
-      document.getElementById('splash-screen').style.display = 'none';
-      document.getElementById('hud').style.display = 'block';
-      yen = 0;
-      wanted = 0;
-      hp = 100;
-      boost = 100;
-      lookYaw = 0;
-      lookPitch = 0.42;
-      mechaGroup.position.set(0, 0, 0);
-      mechaGroup.rotation.y = 0;
-      populateWorld();
-      updateHUD();
-      showBanner('DRAG ANYWHERE TO LOOK 360° • STICK TO WALK');
-      gameRunning = true;
-    });
-
-    // Joystick (Walk only)
-    const joyZone = document.getElementById('joystick-zone');
-    const joyKnob = document.getElementById('joystick-knob');
-    let joyActive = false;
-    let joyX = 0;
-    let joyY = 0;
-
-    function updateJoy(cx, cy) {
-      const rect = joyZone.getBoundingClientRect();
-      const midX = rect.left + rect.width / 2;
-      const midY = rect.top + rect.height / 2;
-      const maxR = rect.width * 0.36;
-      let dx = cx - midX;
-      let dy = cy - midY;
-      const d = Math.hypot(dx, dy);
-      if (d > maxR) {
-        dx = (dx / d) * maxR;
-        dy = (dy / d) * maxR;
-      }
-      joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-      joyX = dx / maxR;
-      joyY = dy / maxR;
-    }
-
-    joyZone.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); joyActive = true; updateJoy(e.touches[0].clientX, e.touches[0].clientY); });
-    joyZone.addEventListener('touchmove', e => { e.preventDefault(); e.stopPropagation(); if (joyActive) updateJoy(e.touches[0].clientX, e.touches[0].clientY); });
-    const endJoy = () => { joyActive = false; joyX = 0; joyY = 0; joyKnob.style.transform = 'translate(0px, 0px)'; };
-    joyZone.addEventListener('touchend', endJoy);
-    joyZone.addEventListener('touchcancel', endJoy);
-    joyZone.addEventListener('mousedown', e => { e.stopPropagation(); joyActive = true; updateJoy(e.clientX, e.clientY); });
-    window.addEventListener('mousemove', e => { if (joyActive) updateJoy(e.clientX, e.clientY); });
-    window.addEventListener('mouseup', endJoy);
-
-    // Free 360° Look Orbit (independent from joystick, never fights movement)
-    let lookDrag = false;
-    let lastLookX = 0;
-    let lastLookY = 0;
-
-    function applyLookDelta(dx, dy) {
-      lookYaw -= dx * 0.011;
-      lookPitch = Math.max(0.14, Math.min(1.15, lookPitch + dy * 0.008));
-    }
-
-    renderer.domElement.addEventListener('touchstart', e => {
-      if (e.touches.length === 1) {
-        lookDrag = true;
-        lastLookX = e.touches[0].clientX;
-        lastLookY = e.touches[0].clientY;
-      }
-    });
-    renderer.domElement.addEventListener('touchmove', e => {
-      if (lookDrag && e.touches.length === 1) {
-        const t = e.touches[0];
-        applyLookDelta(t.clientX - lastLookX, t.clientY - lastLookY);
-        lastLookX = t.clientX;
-        lastLookY = t.clientY;
-      }
-    });
-    renderer.domElement.addEventListener('touchend', () => { lookDrag = false; });
-
-    renderer.domElement.addEventListener('mousedown', e => {
-      lookDrag = true;
-      lastLookX = e.clientX;
-      lastLookY = e.clientY;
-    });
-    window.addEventListener('mousemove', e => {
-      if (lookDrag) {
-        applyLookDelta(e.clientX - lastLookX, e.clientY - lastLookY);
-        lastLookX = e.clientX;
-        lastLookY = e.clientY;
-      }
-    });
-    window.addEventListener('mouseup', () => { lookDrag = false; });
-
-    const bindHold = (id, setter) => {
-      const el = document.getElementById(id);
-      el.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); setter(true); });
-      el.addEventListener('touchend', () => setter(false));
-      el.addEventListener('mousedown', e => { e.stopPropagation(); setter(true); });
-      el.addEventListener('mouseup', () => setter(false));
-    };
-    bindHold('btn-fire', v => { isFiring = v; });
-    bindHold('btn-boost', v => { isBoosting = v; });
-
-    document.getElementById('btn-swap').addEventListener('click', e => {
-      e.stopPropagation();
-      selectedMech = (selectedMech + 1) % MECHAS.length;
-      buildMecha();
-      showBanner(`SWAPPED TO ${MECHAS[selectedMech].name}`);
-    });
-
-    const keys = {};
-    window.addEventListener('keydown', e => {
-      keys[e.code] = true;
-      if (e.code === 'Space') isFiring = true;
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') isBoosting = true;
-      if (e.code === 'KeyQ') document.getElementById('btn-swap').click();
-    });
-    window.addEventListener('keyup', e => {
-      keys[e.code] = false;
-      if (e.code === 'Space') isFiring = false;
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') isBoosting = false;
-    });
-
-    function fireBlast(now) {
-      const preset = MECHAS[selectedMech];
-      if (!isFiring || now - lastShot < preset.fireRate) return;
-      lastShot = now;
-
-      const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(0.32, 8, 8),
-        new THREE.MeshBasicMaterial({ color: preset.accent })
-      );
-
-      const dir = new THREE.Vector3(Math.sin(mechaGroup.rotation.y), 0, Math.cos(mechaGroup.rotation.y)).normalize();
-      mesh.position.copy(mechaGroup.position).add(new THREE.Vector3(0, 2.5, 0)).addScaledVector(dir, 1.4);
-      scene.add(mesh);
-
-      projectiles.push({ mesh, vel: dir.multiplyScalar(44), life: 1.2 });
-    }
-
-    function shortestAngleDiff(a, b) {
-      let diff = b - a;
-      while (diff > Math.PI) diff -= Math.PI * 2;
-      while (diff < -Math.PI) diff += Math.PI * 2;
-      return diff;
-    }
-
-    let prevTime = performance.now();
-    function animate(now) {
-      requestAnimationFrame(animate);
-      const dt = Math.min(0.05, (now - prevTime) / 1000);
-      prevTime = now;
-
-      if (gameRunning) {
-        const preset = MECHAS[selectedMech];
-        let stickX = joyX;
-        let stickY = joyY;
-        if (keys['KeyA'] || keys['ArrowLeft']) stickX -= 1;
-        if (keys['KeyD'] || keys['ArrowRight']) stickX += 1;
-        if (keys['KeyW'] || keys['ArrowUp']) stickY -= 1;
-        if (keys['KeyS'] || keys['ArrowDown']) stickY += 1;
-
-        const len = Math.hypot(stickX, stickY);
-        if (len > 0.05) {
-          const sx = stickX / Math.max(1, len);
-          const sy = stickY / Math.max(1, len);
-
-          // Camera forward & right projected onto XZ plane so walking/turning is always intuitive
-          const camForwardX = Math.sin(lookYaw);
-          const camForwardZ = Math.cos(lookYaw);
-          const camRightX = Math.cos(lookYaw);
-          const camRightZ = -Math.sin(lookYaw);
-
-          const worldX = camRightX * sx - camForwardX * sy;
-          const worldZ = camRightZ * sx - camForwardZ * sy;
-          const wLen = Math.hypot(worldX, worldZ) || 1;
-          const dirX = worldX / wLen;
-          const dirZ = worldZ / wLen;
-
-          const sprinting = isBoosting && boost > 2;
-          if (sprinting) {
-            boost = Math.max(0, boost - 25 * dt);
-          } else {
-            boost = Math.min(100, boost + 14 * dt);
-          }
-
-          const spd = preset.speed * (sprinting ? 1.75 : 1) * Math.min(1, len);
-          mechaGroup.position.x = Math.max(-105, Math.min(105, mechaGroup.position.x + dirX * spd * dt));
-          mechaGroup.position.z = Math.max(-105, Math.min(105, mechaGroup.position.z + dirZ * spd * dt));
-
-          const targetFacing = Math.atan2(dirX, dirZ);
-          mechaGroup.rotation.y += shortestAngleDiff(mechaGroup.rotation.y, targetFacing) * Math.min(1, dt * 14);
-
-          walkCycle += dt * (sprinting ? 18 : 11);
-          leftLeg.rotation.x = Math.sin(walkCycle) * 0.65;
-          rightLeg.rotation.x = -Math.sin(walkCycle) * 0.65;
-          mechaGroup.position.y = Math.abs(Math.cos(walkCycle)) * 0.14;
-        } else {
-          boost = Math.min(100, boost + 16 * dt);
-          leftLeg.rotation.x *= 0.8;
-          rightLeg.rotation.x *= 0.8;
-          mechaGroup.position.y *= 0.8;
-        }
-
-        // Collide with intact houses
-        for (const h of houses) {
-          if (!h.intact) continue;
-          const dx = mechaGroup.position.x - h.x;
-          const dz = mechaGroup.position.z - h.z;
-          const dist = Math.hypot(dx, dz);
-          const minDist = h.radius + 1.1;
-          if (dist < minDist && dist > 0.001) {
-            mechaGroup.position.x = h.x + (dx / dist) * minDist;
-            mechaGroup.position.z = h.z + (dz / dist) * minDist;
-          }
-        }
-
-        // Move civilian cars & non-chasing police cars along streets
-        const flashOn = Math.floor(now / 180) % 2 === 0;
-        for (const v of vehicles) {
-          if (!v.alive) continue;
-          if (v.alongX) {
-            v.car.position.x += v.dir * v.speed * dt;
-            if (v.car.position.x > 105) v.car.position.x = -105;
-            if (v.car.position.x < -105) v.car.position.x = 105;
-          } else {
-            v.car.position.z += v.dir * v.speed * dt;
-            if (v.car.position.z > 105) v.car.position.z = -105;
-            if (v.car.position.z < -105) v.car.position.z = 105;
-          }
-
-          if (v.isPolice && v.sirenA && v.sirenB) {
-            v.sirenA.material.color.setHex(flashOn ? 0xff1e56 : 0x330010);
-            v.sirenB.material.color.setHex(flashOn ? 0x002244 : 0x00f0ff);
-          }
-        }
-
-        // Collect Yen pickups
-        for (let i = pickups.length - 1; i >= 0; i--) {
-          const p = pickups[i];
-          p.mesh.rotation.y += 2.2 * dt;
-          if (Math.hypot(p.x - mechaGroup.position.x, p.z - mechaGroup.position.z) < 2.4) {
-            scene.remove(p.mesh);
-            pickups.splice(i, 1);
-            yen += 5000;
-            addWantedStarCheck();
-            updateHUD();
-            spawnPickup();
-          }
-        }
-
-        fireBlast(now);
-
-        // Projectiles vs houses & vehicles
-        for (let i = projectiles.length - 1; i >= 0; i--) {
-          const b = projectiles[i];
-          b.mesh.position.addScaledVector(b.vel, dt);
-          b.life -= dt;
-          let hit = false;
-
-          for (const h of houses) {
-            if (!h.intact) continue;
-            if (Math.hypot(b.mesh.position.x - h.x, b.mesh.position.z - h.z) < h.radius + 0.4 && b.mesh.position.y < 7) {
-              h.hp -= 30;
-              hit = true;
-              if (h.hp <= 0) {
-                h.intact = false;
-                h.mesh.scale.set(1, 0.18, 1);
-                yen += 10000;
-                addWantedStarCheck();
-                updateHUD();
-              }
-              break;
-            }
-          }
-
-          if (!hit) {
-            for (const v of vehicles) {
-              if (!v.alive) continue;
-              if (Math.hypot(b.mesh.position.x - v.car.position.x, b.mesh.position.z - v.car.position.z) < 2.3 && b.mesh.position.y < 3.5) {
-                v.hp -= 30;
-                hit = true;
-                if (v.hp <= 0) {
-                  v.alive = false;
-                  v.car.scale.set(1, 0.25, 1);
-                  yen += v.isPolice ? 15000 : 8000;
-                  addWantedStarCheck();
-                  updateHUD();
-                }
-                break;
-              }
-            }
-          }
-
-          if (hit || b.life <= 0) {
-            scene.remove(b.mesh);
-            projectiles.splice(i, 1);
-          }
-        }
-
-        // Spherical 360° orbit camera around mecha
-        const camDist = 14;
-        const horizDist = Math.cos(lookPitch) * camDist;
-        const vertDist = Math.sin(lookPitch) * camDist + 1.8;
-
-        const desiredCam = new THREE.Vector3(
-          mechaGroup.position.x - Math.sin(lookYaw) * horizDist,
-          mechaGroup.position.y + vertDist,
-          mechaGroup.position.z - Math.cos(lookYaw) * horizDist
-        );
-        camera.position.lerp(desiredCam, 0.16);
-        camera.lookAt(mechaGroup.position.x, mechaGroup.position.y + 2.2, mechaGroup.position.z);
-      } else {
-        camera.position.set(Math.sin(now * 0.0004) * 18, 11, Math.cos(now * 0.0004) * 18);
-        camera.lookAt(0, 2, 0);
-      }
-
-      renderer.render(scene, camera);
-    }
-
-    populateWorld();
-    requestAnimationFrame(animate);
-  </script>
+  function loop() {
+    update(); draw(); requestAnimationFrame(loop);
+  }
+  loop();
+})();
+</script>
 </body>
 </html>
