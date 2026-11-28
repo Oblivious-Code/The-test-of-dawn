@@ -1,0 +1,322 @@
+Claude Haiku 5.5 Ran out of tokens at last minute all code generated is
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>IRON HORIZON: Mech City</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#050510;font-family:'Segoe UI',Arial,sans-serif;color:#e0f7ff;touch-action:none;user-select:none}
+canvas{position:fixed;inset:0;z-index:0}
+#hud{position:fixed;top:0;left:0;right:0;padding:12px 16px;z-index:4;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-start}
+.label{font-size:12px;letter-spacing:2px;text-shadow:0 0 6px #0ff;margin-top:6px}
+.bar{width:170px;height:10px;background:#111;border:1px solid #0ff;border-radius:4px;overflow:hidden;margin-top:4px}
+.fill{height:100%;width:100%;transition:width .15s}
+#hp{background:#ff2d75}
+#en{background:#0ff}
+#score{font-size:24px;color:#ff2d75;text-shadow:0 0 10px #ff2d75}
+#cross{position:fixed;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border:2px solid rgba(0,255,255,.8);border-radius:50%;z-index:3;pointer-events:none;box-shadow:0 0 8px rgba(0,255,255,.6)}
+#cross::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;background:#0ff;border-radius:50%}
+#lookZone{position:fixed;top:0;right:0;width:55%;height:100%;z-index:2}
+.btn{position:fixed;width:84px;height:84px;border-radius:50%;border:2px solid #0ff;background:rgba(0,255,255,.12);color:#0ff;display:flex;align-items:center;justify-content:center;font-weight:bold;letter-spacing:1px;z-index:5;box-shadow:0 0 12px rgba(0,255,255,.4)}
+#fire{right:20px;bottom:20px;border-color:#ff2d75;color:#ff2d75;background:rgba(255,45,117,.15);box-shadow:0 0 12px rgba(255,45,117,.5)}
+#jump{right:118px;bottom:30px}
+#boost{right:20px;bottom:118px;border-color:#b14dff;color:#b14dff;background:rgba(177,77,255,.15)}
+#joy{position:fixed;left:20px;bottom:20px;width:130px;height:130px;border-radius:50%;border:2px solid rgba(0,255,255,.5);background:rgba(0,255,255,.07);z-index:5}
+#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;background:rgba(0,255,255,.35);border:2px solid #0ff;transform:translate(-50%,-50%)}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,5,16,.88);z-index:20;padding:20px;text-align:center}
+h1{font-size:clamp(26px,7vw,52px);color:#0ff;text-shadow:0 0 14px #0ff,0 0 30px #f0f;letter-spacing:4px;margin-bottom:8px}
+.sub{font-size:13px;letter-spacing:2px;color:#f0f;margin-bottom:24px}
+#cards{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:900px}
+.card{width:240px;background:rgba(10,10,30,.9);border:1px solid #0ff;border-radius:10px;padding:14px;color:#e0f7ff;cursor:pointer;text-align:left;font-family:inherit;box-shadow:0 0 14px rgba(0,255,255,.25)}
+.card:hover,.card:active{border-color:#f0f;box-shadow:0 0 20px rgba(255,0,255,.5)}
+.card h3{color:#0ff;font-size:17px;margin-bottom:2px}
+.card .role{color:#f0f;font-size:12px;letter-spacing:1px;margin-bottom:6px}
+.card p{font-size:12px;opacity:.8;margin-bottom:8px}
+.srow{display:flex;align-items:center;gap:6px;font-size:11px;margin-top:4px}
+.srow span:first-child{width:62px}
+.sbar{flex:1;height:6px;background:#111;border-radius:3px;overflow:hidden}
+.sbar i{display:block;height:100%;background:linear-gradient(90deg,#0ff,#f0f)}
+#over .big{font-size:28px;color:#ff2d75;text-shadow:0 0 12px #ff2d75;margin-bottom:12px}
+button.start{margin-top:20px;padding:12px 28px;background:transparent;border:2px solid #f0f;color:#f0f;font-size:16px;letter-spacing:2px;border-radius:6px;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div>
+    <div class="label" id="mechName">SELECT A MECH</div>
+    <div class="label">ARMOUR</div>
+    <div class="bar"><div class="fill" id="hp"></div></div>
+    <div class="label">ENERGY</div>
+    <div class="bar"><div class="fill" id="en"></div></div>
+  </div>
+  <div id="score">0</div>
+</div>
+
+<div id="cross"></div>
+<div id="lookZone"></div>
+<div id="joy"><div id="knob"></div></div>
+<div id="fire" class="btn">FIRE</div>
+<div id="jump" class="btn">JUMP</div>
+<div id="boost" class="btn">BOOST</div>
+
+<div id="title" class="overlay">
+  <h1>IRON HORIZON</h1>
+  <div class="sub">MECH CITY</div>
+  <div id="cards"></div>
+</div>
+
+<div id="over" class="overlay" style="display:none">
+  <div class="big">MECH DESTROYED</div>
+  <div id="finalScore" style="margin-bottom:8px"></div>
+  <button class="start" id="restart">RETURN TO HANGAR</button>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const MECHS={
+  vanguard:{name:'Vanguard MK-I',role:'ALL-ROUNDER',desc:'Balanced armour and firepower. A solid first pick.',armour:100,speed:9,fire:18,energy:100,color:0x00ffff,body:0x3a4a6a,bulk:1.0,extra:'shoulders'},
+  ravager:{name:'Ravager X',role:'HEAVY ASSAULT',desc:'Tanky and hard-hitting, but slow on its feet.',armour:160,speed:6,fire:30,energy:80,color:0xff2d75,body:0x4a3a30,bulk:1.2,extra:'cannons'},
+  strike:{name:'Strikeshade',role:'STEALTH STRIKER',desc:'Fast and agile, but fragile under fire.',armour:70,speed:12,fire:12,energy:120,color:0xb14dff,body:0x2a1f44,bulk:0.9,extra:'fins'}
+};
+const MAX={armour:160,speed:12,fire:30,energy:120};
+
+let mech=MECHS.vanguard, running=false, score=0, yaw=0, pitch=0;
+let P=null, mechGroup=null, respawnTimer=0;
+const enemies=[], shots=[];
+const held={};
+const input={jumpQueued:false,fireHeld:false,boostHeld:false};
+let joyVec={x:0,y:0}, joyId=null, joyCenter={x:0,y:0};
+let lookId=null, lastLookX=0, lastLookY=0;
+
+// ---------- Renderer and scene ----------
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+document.body.prepend(renderer.domElement);
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x050510);
+scene.fog=new THREE.Fog(0x050510,45,180);
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,320);
+camera.position.set(0,6,12);
+camera.lookAt(0,1,0);
+
+scene.add(new THREE.HemisphereLight(0x6070a0,0x101020,1.1));
+const sun=new THREE.DirectionalLight(0xff88dd,0.9);
+sun.position.set(-30,50,20);
+scene.add(sun);
+const rim=new THREE.DirectionalLight(0x00ddff,0.6);
+rim.position.set(30,20,-40);
+scene.add(rim);
+
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshStandardMaterial({color:0x0a0a18,roughness:0.85,metalness:0.2}));
+ground.rotation.x=-Math.PI/2;
+scene.add(ground);
+const grid=new THREE.GridHelper(400,80,0x00ffff,0x102030);
+grid.position.y=0.02;
+scene.add(grid);
+
+// ---------- City ----------
+const colliders=[];
+const neon=[0x00ffff,0xff2d75,0xb14dff,0xffd700];
+for(let i=0;i<150;i++){
+  const w=3+Math.random()*6, d=3+Math.random()*6, h=5+Math.random()*34;
+  const x=(Math.random()-0.5)*340, z=(Math.random()-0.5)*340;
+  if(Math.hypot(x,z)<14) continue;
+  const c=neon[i%neon.length];
+  const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:0x12122a,roughness:0.5,metalness:0.4}));
+  b.position.set(x,h/2,z);
+  scene.add(b);
+  const edges=new THREE.LineSegments(new THREE.EdgesGeometry(b.geometry),new THREE.LineBasicMaterial({color:c}));
+  edges.position.copy(b.position);
+  scene.add(edges);
+  const sign=new THREE.Mesh(new THREE.BoxGeometry(w*0.7,0.35,0.06),new THREE.MeshBasicMaterial({color:c}));
+  sign.position.set(x,h*0.75,z+d/2+0.03);
+  scene.add(sign);
+  if(Math.random()<0.5){
+    const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.08,3,6),new THREE.MeshStandardMaterial({color:0x222233,metalness:0.8}));
+    ant.position.set(x,h+1.5,z);
+    scene.add(ant);
+    const beacon=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,8),new THREE.MeshBasicMaterial({color:0xff2d75}));
+    beacon.position.set(x,h+3.1,z);
+    scene.add(beacon);
+  }
+  colliders.push({x,z,hw:w/2+0.8,hd:d/2+0.8});
+}
+
+// ---------- Mech model (front faces +z) ----------
+function buildMech(key){
+  const m=MECHS[key];
+  const g=new THREE.Group();
+  const armor=new THREE.MeshStandardMaterial({color:m.body,metalness:0.6,roughness:0.35});
+  const dark=new THREE.MeshStandardMaterial({color:0x111122,metalness:0.8,roughness:0.45});
+  const glow=new THREE.MeshBasicMaterial({color:m.color});
+  const flame=new THREE.MeshBasicMaterial({color:m.color,transparent:true,opacity:0.55});
+  const put=(geo,mat,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1)=>{
+    const mesh=new THREE.Mesh(geo,mat);
+    mesh.position.set(x,y,z);
+    mesh.rotation.set(rx,ry,rz);
+    mesh.scale.set(sx,sy,sz);
+    g.add(mesh);
+    return mesh;
+  };
+
+  // Legs with knees and feet
+  for(const s of [-1,1]){
+    put(new THREE.CapsuleGeometry(0.24,1.1,6,12),armor,s*0.42,1.15,0);
+    put(new THREE.SphereGeometry(0.28,12,10),dark,s*0.42,1.9,0);
+    put(new THREE.BoxGeometry(0.5,0.22,0.85),dark,s*0.42,0.2,0.12);
+    put(new THREE.BoxGeometry(0.1,0.45,0.04),glow,s*0.42,1.9,0.27);
+  }
+
+  // Hips
+  put(new THREE.BoxGeometry(1.0,0.45,0.7),dark,0,2.2,0);
+
+  // Lathe-shaped torso for a rounded chest
+  const profile=[
+    new THREE.Vector2(0.001,0),new THREE.Vector2(0.75,0.1),new THREE.Vector2(0.9,0.6),
+    new THREE.Vector2(0.95,1.2),new THREE.Vector2(0.8,1.7),new THREE.Vector2(0.45,1.95),new THREE.Vector2(0.001,2.0)
+  ];
+  put(new THREE.LatheGeometry(profile,20),armor,0,2.3,0,0,0,0,1,1,0.75);
+  put(new THREE.BoxGeometry(0.45,0.45,0.05),glow,0,3.45,0.56);
+
+  // Head with visor and antenna, rotated by aim pitch
+  const head=put(new THREE.SphereGeometry(0.42,16,12),armor,0,4.75,0,0,0,0,1,0.9,1);
+  put(new THREE.BoxGeometry(0.6,0.12,0.08),glow,0,4.75,0.36);
+  put(new THREE.CylinderGeometry(0.02,0.02,0.6,6),dark,-0.2,5.2,-0.05);
+
+  // Shoulders and armour plates
+  for(const s of [-1,1]){
+    put(new THREE.SphereGeometry(0.42,14,10),armor,s*1.15,3.9,0);
+    put(new THREE.BoxGeometry(0.7,0.22,0.9),dark,s*1.15,4.2,0,0,0,s*0.25);
+  }
+
+  // Arms with forearm cannons
+  for(const s of [-1,1]){
+    put(new THREE.CapsuleGeometry(0.2,0.9,6,10),armor,s*1.2,3.0,0.1);
+    put(new THREE.CylinderGeometry(0.14,0.16,1.3,10),dark,s*1.2,2.6,0.75,Math.PI/2,0,0);
+    put(new THREE.TorusGeometry(0.16,0.04,8,16),glow,s*1.2,2.6,1.42);
+  }
+
+  // Back thrusters with flames
+  for(const s of [-1,1]){
+    put(new THREE.CylinderGeometry(0.22,0.26,0.8,12),dark,s*0.5,3.0,-0.7,Math.PI/2,0,0);
+    put(new THREE.ConeGeometry(0.2,0.7,10),flame,s*0.5,3.0,-1.5,-Math.PI/2,0,0);
+  }
+
+  // Variant details
+  if(m.extra==='cannons'){
+    for(const s of [-1,1]){
+      put(new THREE.CylinderGeometry(0.28,0.32,1.6,12),dark,s*1.15,4.4,0.9,Math.PI/2,0,0);
+      put(new THREE.TorusGeometry(0.3,0.05,8,16),glow,s*1.15,4.4,1.72);
+    }
+  }
+  if(m.extra==='fins'){
+    for(const s of [-1,1]){
+      put(new THREE.BoxGeometry(0.08,1.4,0.9),glow,s*0.9,3.7,-0.6,0,0,s*0.3);
+    }
+  }
+
+  g.scale.setScalar(m.bulk);
+  g.userData.head=head;
+  return g;
+}
+
+// ---------- Drones ----------
+function buildDrone(){
+  const g=new THREE.Group();
+  const core=new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.8,1),
+    new THREE.MeshStandardMaterial({color:0x220011,emissive:0xff2d75,emissiveIntensity:1.6,flatShading:true})
+  );
+  const r1=new THREE.Mesh(new THREE.TorusGeometry(1.3,0.07,8,40),new THREE.MeshBasicMaterial({color:0xff2d75}));
+  r1.rotation.x=Math.PI/2;
+  const r2=new THREE.Mesh(new THREE.TorusGeometry(1.1,0.05,8,40),new THREE.MeshBasicMaterial({color:0xffaa00}));
+  r2.rotation.set(0.6,0,0.4);
+  g.add(core,r1,r2);
+  g.userData.rings=[r1,r2];
+  return g;
+}
+
+function spawnEnemy(){
+  const m=buildDrone();
+  const a=Math.random()*Math.PI*2, r=40+Math.random()*60;
+  m.position.set(P.pos.x+Math.cos(a)*r,3,P.pos.z+Math.sin(a)*r);
+  scene.add(m);
+  enemies.push({mesh:m,hp:40,speed:3.5+Math.random()*2,phase:Math.random()*6});
+}
+
+// ---------- Aiming and shots ----------
+function aimDir(){
+  const c=Math.cos(pitch);
+  return new THREE.Vector3(-Math.sin(yaw)*c,Math.sin(pitch),-Math.cos(yaw)*c);
+}
+
+function spawnShot(){
+  const a=aimDir();
+  const m=new THREE.Mesh(new THREE.SphereGeometry(0.2,10,8),new THREE.MeshBasicMaterial({color:mech.color}));
+  m.scale.z=3;
+  m.position.set(P.pos.x+a.x*2.2,P.pos.y+3.2+a.y*2.2,P.pos.z+a.z*2.2);
+  m.lookAt(m.position.clone().add(a));
+  scene.add(m);
+  shots.push({mesh:m,vel:a.clone().multiplyScalar(90),life:1.4});
+}
+
+// ---------- Game logic ----------
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+function update(dt){
+  // Movement input from keyboard and joystick
+  const kx=((held.KeyD||held.ArrowRight)?1:0)-((held.KeyA||held.ArrowLeft)?1:0);
+  const ky=((held.KeyS||held.ArrowDown)?1:0)-((held.KeyW||held.ArrowUp)?1:0);
+  const mx=clamp(joyVec.x+kx,-1,1), my=clamp(joyVec.y+ky,-1,1);
+  const strength=Math.min(1,Math.hypot(mx,my));
+  const moving=strength>0.1;
+
+  // Movement is relative to the camera's horizontal direction
+  const fwdX=-Math.sin(yaw), fwdZ=-Math.cos(yaw);
+  const rgtX=-fwdZ, rgtZ=fwdX;
+  let dx=rgtX*mx-fwdX*my, dz=rgtZ*mx-fwdZ*my;
+  const len=Math.hypot(dx,dz);
+  if(len>1){dx/=len;dz/=len;}
+
+  // Boost and movement
+  const boosting=(input.boostHeld||held.ShiftLeft)&&moving&&P.energy>0;
+  const spd=mech.speed*(boosting?1.7:1)*strength;
+  if(boosting) P.energy-=22*dt;
+  P.pos.x=clamp(P.pos.x+dx*spd*dt,-190,190);
+  P.pos.z=clamp(P.pos.z+dz*spd*dt,-190,190);
+
+  // Push out of buildings
+  for(const c of colliders){
+    const ox=c.hw-Math.abs(P.pos.x-c.x), oz=c.hd-Math.abs(P.pos.z-c.z);
+    if(ox>0&&oz>0){
+      if(ox<oz) P.pos.x+=(P.pos.x>=c.x?1:-1)*ox;
+      else P.pos.z+=(P.pos.z>=c.z?1:-1)*oz;
+    }
+  }
+
+  // The mech always faces the aim direction, so shots never fire from its back
+  mechGroup.rotation.y=yaw+Math.PI;
+  if(mechGroup.userData.head) mechGroup.userData.head.rotation.x=-pitch*0.6;
+
+  // Jump and gravity
+  if(input.jumpQueued){
+    input.jumpQueued=false;
+    if(P.onGround&&P.energy>=10){P.vy=12;P.onGround=false;P.energy-=10;}
+  }
+  P.vy-=28*dt;
+  P.pos.y+=P.vy*dt;
+  if(P.pos.y<=0){P.pos.y=0;P.vy=0;P.onGround=true;}
+
+  // Energy regeneration
+  if(!boosting) P.energy=Math.min(mech.energy,P.energy+8*dt);
+  P.energy=Math.max(0,P.energy);
+
+  // Firing
+  P.cool-=dt;
+  P.hitCool-=d
