@@ -32,7 +32,7 @@ h1{font-size:clamp(26px,7vw,52px);color:#0ff;text-shadow:0 0 14px #0ff,0 0 30px 
 .card .role{color:#f0f;font-size:12px;letter-spacing:1px;margin-bottom:6px}
 .card p{font-size:12px;opacity:.8;margin-bottom:8px}
 .srow{display:flex;align-items:center;gap:6px;font-size:11px;margin-top:4px}
-.srow span:first-child{width:58px}
+.srow span:first-child{width:62px}
 .sbar{flex:1;height:6px;background:#111;border-radius:3px;overflow:hidden}
 .sbar i{display:block;height:100%;background:linear-gradient(90deg,#0ff,#f0f)}
 #over .big{font-size:28px;color:#ff2d75;text-shadow:0 0 12px #ff2d75;margin-bottom:12px}
@@ -78,7 +78,7 @@ const MECHS = {
   ravager:{name:'Ravager X',role:'HEAVY ASSAULT',desc:'Tanky and hard-hitting, but slow on its feet.',armour:160,speed:6,fire:30,energy:80,color:0xff2d75},
   strike:{name:'Strikeshade',role:'STEALTH STRIKER',desc:'Fast and agile, but fragile under fire.',armour:70,speed:12,fire:12,energy:120,color:0xb14dff}
 };
-const MAX = {armour:160,speed:12,fire:30,energy:120};
+const MAX={armour:160,speed:12,fire:30,energy:120};
 
 let mech=MECHS.vanguard, running=false, score=0, yaw=0;
 let P=null, mechGroup=null, respawnTimer=0;
@@ -88,7 +88,7 @@ const input={jumpQueued:false,fireHeld:false,boostHeld:false};
 let joyVec={x:0,y:0}, joyId=null, joyCenter={x:0,y:0};
 let lookId=null, lastLookX=0;
 
-// ---------- Renderer & scene ----------
+// ---------- Renderer and scene ----------
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
@@ -147,7 +147,7 @@ function buildMech(color){
   return g;
 }
 
-// ---------- Enemies & shots ----------
+// ---------- Enemies and shots ----------
 function spawnEnemy(){
   const m=new THREE.Mesh(new THREE.OctahedronGeometry(1.1),new THREE.MeshStandardMaterial({color:0x330011,emissive:0xff2d75,emissiveIntensity:1.4}));
   const a=Math.random()*Math.PI*2, r=40+Math.random()*60;
@@ -168,8 +168,253 @@ function spawnShot(){
 function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
 
 function update(dt){
-  // Input
+  // Movement input from keyboard and joystick
   const kx=((held.KeyD||held.ArrowRight)?1:0)-((held.KeyA||held.ArrowLeft)?1:0);
   const ky=((held.KeyS||held.ArrowDown)?1:0)-((held.KeyW||held.ArrowUp)?1:0);
   const mx=clamp(joyVec.x+kx,-1,1), my=clamp(joyVec.y+ky,-1,1);
-  const moving=Math
+  const strength=Math.min(1,Math.hypot(mx,my));
+  const moving=strength>0.1;
+
+  // Convert input to world direction relative to the camera
+  const fwdX=-Math.sin(yaw), fwdZ=-Math.cos(yaw);
+  const rgtX=-fwdZ, rgtZ=fwdX;
+  let dx=rgtX*mx-fwdX*my, dz=rgtZ*mx-fwdZ*my;
+  const len=Math.hypot(dx,dz);
+  if(len>1){dx/=len;dz/=len;}
+
+  // Boost and movement
+  const boosting=(input.boostHeld||held.ShiftLeft)&&moving&&P.energy>0;
+  const spd=mech.speed*(boosting?1.7:1)*strength;
+  if(boosting) P.energy-=22*dt;
+  P.pos.x=clamp(P.pos.x+dx*spd*dt,-190,190);
+  P.pos.z=clamp(P.pos.z+dz*spd*dt,-190,190);
+
+  // Push out of buildings
+  for(const c of colliders){
+    const ox=c.hw-Math.abs(P.pos.x-c.x), oz=c.hd-Math.abs(P.pos.z-c.z);
+    if(ox>0&&oz>0){
+      if(ox<oz) P.pos.x+=(P.pos.x>=c.x?1:-1)*ox;
+      else P.pos.z+=(P.pos.z>=c.z?1:-1)*oz;
+    }
+  }
+
+  if(moving) mechGroup.rotation.y=Math.atan2(dx,dz);
+
+  // Jump and gravity
+  if(input.jumpQueued){
+    input.jumpQueued=false;
+    if(P.onGround&&P.energy>=10){P.vy=12;P.onGround=false;P.energy-=10;}
+  }
+  P.vy-=28*dt;
+  P.pos.y+=P.vy*dt;
+  if(P.pos.y<=0){P.pos.y=0;P.vy=0;P.onGround=true;}
+
+  // Energy regeneration
+  if(!boosting) P.energy=Math.min(mech.energy,P.energy+8*dt);
+  P.energy=Math.max(0,P.energy);
+
+  // Firing
+  P.cool-=dt;
+  P.hitCool-=dt;
+  if((input.fireHeld||held.KeyF)&&P.cool<=0&&P.energy>=4){
+    P.cool=0.22;
+    P.energy-=4;
+    spawnShot();
+  }
+
+  mechGroup.position.copy(P.pos);
+
+  // Shots and hit detection
+  for(let i=shots.length-1;i>=0;i--){
+    const s=shots[i];
+    s.mesh.position.addScaledVector(s.vel,dt);
+    s.life-=dt;
+    let dead=s.life<=0;
+    for(let j=enemies.length-1;j>=0&&!dead;j--){
+      const e=enemies[j];
+      if(s.mesh.position.distanceTo(e.mesh.position)<1.4){
+        e.hp-=mech.fire;
+        dead=true;
+        if(e.hp<=0){
+          scene.remove(e.mesh);
+          enemies.splice(j,1);
+          score+=100;
+        }
+      }
+    }
+    if(dead){scene.remove(s.mesh);shots.splice(i,1);}
+  }
+
+  // Enemy movement and contact damage
+  for(const e of enemies){
+    const tx=P.pos.x-e.mesh.position.x, tz=P.pos.z-e.mesh.position.z;
+    const d=Math.hypot(tx,tz);
+    if(d>3){
+      e.mesh.position.x+=tx/d*e.speed*dt;
+      e.mesh.position.z+=tz/d*e.speed*dt;
+    }
+    e.mesh.position.y=3+Math.sin(performance.now()/500+e.phase)*0.5;
+    e.mesh.rotation.y+=dt*2;
+    if(d<2.5&&P.hitCool<=0){P.hp-=12;P.hitCool=0.8;}
+  }
+
+  // Respawn drones
+  if(enemies.length<8){
+    respawnTimer-=dt;
+    if(respawnTimer<=0){spawnEnemy();respawnTimer=2.5;}
+  }
+
+  // Camera follows behind the mech
+  const camDist=10;
+  const ix=P.pos.x+Math.sin(yaw)*camDist;
+  const iz=P.pos.z+Math.cos(yaw)*camDist;
+  const iy=P.pos.y+4.5;
+  const k=Math.min(1,dt*8);
+  camera.position.x+=(ix-camera.position.x)*k;
+  camera.position.y+=(iy-camera.position.y)*k;
+  camera.position.z+=(iz-camera.position.z)*k;
+  camera.lookAt(P.pos.x,P.pos.y+2.2,P.pos.z);
+
+  // HUD
+  document.getElementById('hp').style.width=(P.hp/mech.armour*100)+'%';
+  document.getElementById('en').style.width=(P.energy/mech.energy*100)+'%';
+  document.getElementById('score').textContent=score;
+
+  // Game over
+  if(P.hp<=0){
+    P.hp=0;
+    running=false;
+    document.getElementById('finalScore').textContent='SCORE: '+score;
+    document.getElementById('over').style.display='flex';
+  }
+}
+
+// ---------- Starting and restarting ----------
+function startGame(key){
+  mech=MECHS[key];
+  if(mechGroup) scene.remove(mechGroup);
+  mechGroup=buildMech(mech.color);
+  scene.add(mechGroup);
+  P={pos:new THREE.Vector3(0,0,0),vy:0,onGround:true,hp:mech.armour,energy:mech.energy,cool:0,hitCool:0};
+  yaw=0;
+  score=0;
+  shots.forEach(s=>scene.remove(s.mesh));
+  shots.length=0;
+  enemies.forEach(e=>scene.remove(e.mesh));
+  enemies.length=0;
+  for(let i=0;i<8;i++) spawnEnemy();
+  respawnTimer=2.5;
+  document.getElementById('mechName').textContent=mech.name.toUpperCase();
+  document.getElementById('title').style.display='none';
+  document.getElementById('over').style.display='none';
+  running=true;
+}
+
+// ---------- Hangar cards ----------
+const cardsEl=document.getElementById('cards');
+Object.entries(MECHS).forEach(([key,m])=>{
+  const b=document.createElement('button');
+  b.className='card';
+  const bars=[['Armour',m.armour,MAX.armour],['Speed',m.speed,MAX.speed],['Firepower',m.fire,MAX.fire],['Energy',m.energy,MAX.energy]];
+  b.innerHTML=`<h3>${m.name}</h3><div class="role">${m.role}</div><p>${m.desc}</p>`+
+    bars.map(([n,v,mx])=>`<div class="srow"><span>${n}</span><div class="sbar"><i style="width:${v/mx*100}%"></i></div></div>`).join('');
+  b.addEventListener('click',()=>startGame(key));
+  cardsEl.appendChild(b);
+});
+
+// ---------- Controls ----------
+addEventListener('keydown',e=>{
+  held[e.code]=true;
+  if(e.code==='Space'){
+    e.preventDefault();
+    if(!e.repeat) input.jumpQueued=true;
+  }
+});
+addEventListener('keyup',e=>{held[e.code]=false;});
+
+const joy=document.getElementById('joy');
+const knob=document.getElementById('knob');
+function moveJoy(e){
+  const dx=e.clientX-joyCenter.x, dy=e.clientY-joyCenter.y;
+  const dist=Math.min(Math.hypot(dx,dy),40);
+  const a=Math.atan2(dy,dx);
+  const kx=Math.cos(a)*dist, ky=Math.sin(a)*dist;
+  knob.style.transform=`translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+  joyVec={x:kx/40,y:ky/40};
+}
+joy.addEventListener('pointerdown',e=>{
+  joyId=e.pointerId;
+  joy.setPointerCapture(e.pointerId);
+  const r=joy.getBoundingClientRect();
+  joyCenter={x:r.left+r.width/2,y:r.top+r.height/2};
+  moveJoy(e);
+});
+joy.addEventListener('pointermove',e=>{if(e.pointerId===joyId) moveJoy(e);});
+const endJoy=e=>{
+  if(e.pointerId===joyId){
+    joyId=null;
+    joyVec={x:0,y:0};
+    knob.style.transform='translate(-50%,-50%)';
+  }
+};
+joy.addEventListener('pointerup',endJoy);
+joy.addEventListener('pointercancel',endJoy);
+
+const look=document.getElementById('lookZone');
+look.addEventListener('pointerdown',e=>{
+  lookId=e.pointerId;
+  lastLookX=e.clientX;
+  look.setPointerCapture(e.pointerId);
+  if(e.pointerType==='mouse') input.fireHeld=true;
+});
+look.addEventListener('pointermove',e=>{
+  if(e.pointerId===lookId){
+    yaw-=(e.clientX-lastLookX)*0.006;
+    lastLookX=e.clientX;
+  }
+});
+const endLook=e=>{
+  if(e.pointerId===lookId){
+    lookId=null;
+    if(e.pointerType==='mouse') input.fireHeld=false;
+  }
+};
+look.addEventListener('pointerup',endLook);
+look.addEventListener('pointercancel',endLook);
+
+function bind(id,down,up){
+  const el=document.getElementById(id);
+  el.addEventListener('pointerdown',e=>{e.preventDefault();down();});
+  if(up){
+    el.addEventListener('pointerup',up);
+    el.addEventListener('pointercancel',up);
+  }
+}
+bind('fire',()=>{input.fireHeld=true;},()=>{input.fireHeld=false;});
+bind('jump',()=>{input.jumpQueued=true;});
+bind('boost',()=>{input.boostHeld=true;},()=>{input.boostHeld=false;});
+
+document.getElementById('restart').addEventListener('click',()=>{
+  document.getElementById('over').style.display='none';
+  document.getElementById('title').style.display='flex';
+});
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+// ---------- Render loop ----------
+let last=performance.now();
+function loop(now){
+  const dt=Math.min((now-last)/1000,0.05);
+  last=now;
+  if(running) update(dt);
+  renderer.render(scene,camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
