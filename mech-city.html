@@ -3,224 +3,285 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Mech City</title>
+  <title>Mech City 3D</title>
   <style>
     * { box-sizing: border-box; }
     html, body {
       margin: 0; width: 100%; height: 100%; overflow: hidden;
-      background: #101820; color: white; font: 16px system-ui, sans-serif;
+      background: #9cc5d0; font: 16px system-ui, sans-serif;
       touch-action: none;
     }
-    canvas { display: block; width: 100%; height: 100%; }
+    canvas { display: block; }
     #hud {
       position: fixed; top: 12px; left: 12px; z-index: 2;
       padding: 10px 14px; border-radius: 12px;
-      background: #101820d9; line-height: 1.4; pointer-events: none;
+      color: white; background: #101820dd; line-height: 1.4;
+      pointer-events: none;
     }
     #controls {
-      position: fixed; inset: auto 0 18px; display: flex;
-      justify-content: space-between; align-items: end;
-      padding: 0 20px; z-index: 3; pointer-events: none;
+      position: fixed; inset: auto 0 18px; z-index: 3;
+      display: flex; justify-content: space-between; align-items: end;
+      padding: 0 20px; pointer-events: none;
     }
     .pad { display: grid; grid-template: repeat(2, 58px) / repeat(3, 58px); gap: 5px; }
     button {
-      border: 1px solid #ffffff55; border-radius: 14px;
-      background: #263746df; color: white; font-size: 22px;
-      width: 58px; height: 58px; touch-action: none;
-      pointer-events: auto; user-select: none;
+      width: 58px; height: 58px; border: 1px solid #ffffff66;
+      border-radius: 14px; background: #263746df; color: white;
+      font-size: 22px; touch-action: none; user-select: none;
+      pointer-events: auto;
     }
     button:active { background: #e85d3f; }
     #smash { width: 82px; height: 82px; border-radius: 50%; font-size: 15px; font-weight: 800; }
     .empty { visibility: hidden; }
-    @media (hover: hover) and (pointer: fine) { #controls { opacity: .55; } }
   </style>
 </head>
 <body>
-  <div id="hud">🏙️ MECH CITY<br><span id="score">Buildings smashed: 0</span><br><small>Move: WASD / arrows · Smash: Space</small></div>
-  <canvas id="game"></canvas>
+  <div id="hud">
+    🏙️ MECH CITY 3D<br>
+    <span id="score">Buildings smashed: 0</span><br>
+    <small>Move: WASD / arrows · Smash: Space</small>
+  </div>
 
   <div id="controls">
     <div class="pad">
       <button class="empty" aria-hidden="true"></button>
-      <button data-dir="up" aria-label="Move up">▲</button>
+      <button data-dir="up" aria-label="Move forward">▲</button>
       <button class="empty" aria-hidden="true"></button>
       <button data-dir="left" aria-label="Move left">◀</button>
-      <button data-dir="down" aria-label="Move down">▼</button>
+      <button data-dir="down" aria-label="Move backward">▼</button>
       <button data-dir="right" aria-label="Move right">▶</button>
     </div>
     <button id="smash" aria-label="Smash nearby building">SMASH</button>
   </div>
 
-<script>
-(() => {
-  const canvas = document.querySelector("#game");
-  const ctx = canvas.getContext("2d");
-  const scoreText = document.querySelector("#score");
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 
-  let w, h, dpr;
-  function resize() {
-    dpr = Math.min(devicePixelRatio || 1, 2);
-    w = innerWidth; h = innerHeight;
-    canvas.width = w * dpr; canvas.height = h * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  addEventListener("resize", resize); resize();
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9cc5d0);
+    scene.fog = new THREE.Fog(0x9cc5d0, 75, 145);
 
-  const world = { width: 2200, height: 1600 };
-  const mech = { x: 1100, y: 800, size: 28, speed: 3.2 };
-  const keys = new Set();
-  const held = new Set();
-  let smashed = 0, messageUntil = 0, message = "";
+    const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 220);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
 
-  // Buildings sit between wide, walkable city streets.
-  const buildings = [];
-  for (let y = 100; y < world.height - 100; y += 230) {
-    for (let x = 100; x < world.width - 100; x += 260) {
-      buildings.push({
-        x: x + 25 + Math.random() * 25,
-        y: y + 25 + Math.random() * 25,
-        w: 90 + Math.random() * 55,
-        h: 90 + Math.random() * 55,
-        color: ["#526779", "#78685d", "#536b61", "#655f79"][Math.floor(Math.random() * 4)],
-        alive: true
-      });
-    }
-  }
+    scene.add(new THREE.HemisphereLight(0xe6f7ff, 0x59615b, 2));
+    const sun = new THREE.DirectionalLight(0xfff0cf, 3);
+    sun.position.set(-25, 45, 30);
+    sun.castShadow = true;
+    scene.add(sun);
 
-  addEventListener("keydown", e => {
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
-    keys.add(e.key.toLowerCase());
-    if (e.key === " ") smash();
-  });
-  addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
-
-  document.querySelectorAll("[data-dir]").forEach(button => {
-    const dir = button.dataset.dir;
-    button.addEventListener("pointerdown", e => {
-      e.preventDefault(); button.setPointerCapture(e.pointerId); held.add(dir);
-    });
-    const release = () => held.delete(dir);
-    button.addEventListener("pointerup", release);
-    button.addEventListener("pointercancel", release);
-    button.addEventListener("lostpointercapture", release);
-  });
-  document.querySelector("#smash").addEventListener("pointerdown", e => {
-    e.preventDefault(); smash();
-  });
-
-  function smash() {
-    let target = null, best = 125;
-    for (const b of buildings) {
-      if (!b.alive) continue;
-      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
-      const distance = Math.hypot(cx - mech.x, cy - mech.y);
-      if (distance < best) { best = distance; target = b; }
-    }
-    if (target) {
-      target.alive = false;
-      smashed++;
-      scoreText.textContent = `Buildings smashed: ${smashed}`;
-      message = "CRUNCH!";
-      messageUntil = performance.now() + 700;
-    } else {
-      message = "Get closer to a building!";
-      messageUntil = performance.now() + 700;
-    }
-  }
-
-  function down(dir, ...keyboard) {
-    return held.has(dir) || keyboard.some(k => keys.has(k));
-  }
-
-  function update() {
-    let dx = 0, dy = 0;
-    if (down("left", "a", "arrowleft")) dx--;
-    if (down("right", "d", "arrowright")) dx++;
-    if (down("up", "w", "arrowup")) dy--;
-    if (down("down", "s", "arrowdown")) dy++;
-    if (dx && dy) { dx *= Math.SQRT1_2; dy *= Math.SQRT1_2; }
-
-    mech.x = Math.max(25, Math.min(world.width - 25, mech.x + dx * mech.speed));
-    mech.y = Math.max(25, Math.min(world.height - 25, mech.y + dy * mech.speed));
-  }
-
-  function draw() {
-    const camX = Math.max(0, Math.min(world.width - w, mech.x - w / 2));
-    const camY = Math.max(0, Math.min(world.height - h, mech.y - h / 2));
-
-    ctx.fillStyle = "#26353a";
-    ctx.fillRect(0, 0, w, h);
-
-    // Street grid
-    ctx.fillStyle = "#39464a";
-    for (let x = 0; x < world.width; x += 260) ctx.fillRect(x - camX, 0, 180, h);
-    for (let y = 0; y < world.height; y += 230) ctx.fillRect(0, y - camY, w, 150);
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(130, 130),
+      new THREE.MeshStandardMaterial({ color: 0x465052, roughness: 1 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.08;
+    ground.receiveShadow = true;
+    scene.add(ground);
 
     // Road markings
-    ctx.strokeStyle = "#d5c27a66";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([18, 18]);
-    for (let x = 90; x < world.width; x += 260) {
-      ctx.beginPath(); ctx.moveTo(x - camX, 0); ctx.lineTo(x - camX, h); ctx.stroke();
-    }
-    for (let y = 75; y < world.height; y += 230) {
-      ctx.beginPath(); ctx.moveTo(0, y - camY); ctx.lineTo(w, y - camY); ctx.stroke();
-    }
-    ctx.setLineDash([]);
-
-    // Buildings
-    for (const b of buildings) {
-      if (!b.alive) {
-        ctx.fillStyle = "#514b45";
-        ctx.fillRect(b.x - camX, b.y - camY, b.w, b.h);
-        ctx.fillStyle = "#8b7760";
-        for (let i = 0; i < 5; i++) {
-          ctx.fillRect(b.x - camX + Math.random() * b.w, b.y - camY + Math.random() * b.h, 4, 4);
-        }
-        continue;
+    const stripeMat = new THREE.MeshBasicMaterial({ color: 0xd7c879 });
+    for (let i = -50; i <= 50; i += 10) {
+      for (const z of [-30, -10, 10, 30]) {
+        const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.025, 3), stripeMat);
+        stripe.position.set(i, -0.035, z);
+        scene.add(stripe);
       }
-      ctx.fillStyle = "#00000055";
-      ctx.fillRect(b.x - camX + 7, b.y - camY + 8, b.w, b.h);
-      ctx.fillStyle = b.color;
-      ctx.fillRect(b.x - camX, b.y - camY, b.w, b.h);
-      ctx.fillStyle = "#ffffff22";
-      ctx.fillRect(b.x - camX + 8, b.y - camY + 8, b.w - 16, 8);
-      ctx.fillStyle = "#b9d7d755";
-      for (let wx = 12; wx < b.w - 8; wx += 22)
-        for (let wy = 22; wy < b.h - 8; wy += 25)
-          ctx.fillRect(b.x - camX + wx, b.y - camY + wy, 8, 9);
+      for (const x of [-30, -10, 10, 30]) {
+        const stripe = new THREE.Mesh(new THREE.BoxGeometry(3, 0.025, 0.18), stripeMat);
+        stripe.position.set(x, -0.034, i);
+        scene.add(stripe);
+      }
     }
 
-    // Mech
-    const x = mech.x - camX, y = mech.y - camY;
-    ctx.fillStyle = "#0008";
-    ctx.beginPath(); ctx.ellipse(x, y + 18, 25, 10, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#e85d3f";
-    ctx.fillRect(x - 17, y - 20, 34, 38);
-    ctx.fillStyle = "#f2c14e";
-    ctx.fillRect(x - 13, y - 31, 26, 17);
-    ctx.fillStyle = "#15232a";
-    ctx.fillRect(x - 8, y - 26, 16, 6);
-    ctx.fillStyle = "#b5c5c8";
-    ctx.fillRect(x - 25, y - 10, 8, 21);
-    ctx.fillRect(x + 17, y - 10, 8, 21);
-    ctx.fillStyle = "#263746";
-    ctx.fillRect(x - 14, y + 17, 10, 10);
-    ctx.fillRect(x + 4, y + 17, 10, 10);
+    const buildings = [];
+    const buildingColors = [0x687d89, 0x88786a, 0x637b6b, 0x726f88, 0x9a8064];
 
-    if (performance.now() < messageUntil) {
-      ctx.font = "bold 22px system-ui";
-      ctx.textAlign = "center";
-      ctx.fillStyle = "white";
-      ctx.fillText(message, x, y - 48);
+    // Buildings are spaced out to leave roads and walkable space.
+    for (const x of [-40, -20, 20, 40]) {
+      for (const z of [-40, -20, 20, 40]) {
+        const width = 8 + Math.random() * 3;
+        const depth = 8 + Math.random() * 3;
+        const height = 8 + Math.random() * 22;
+        const material = new THREE.MeshStandardMaterial({
+          color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
+          roughness: 0.82
+        });
+        const building = new THREE.Mesh(
+          new THREE.BoxGeometry(width, height, depth),
+          material
+        );
+        building.position.set(x, height / 2, z);
+        building.castShadow = true;
+        building.receiveShadow = true;
+        building.userData = { alive: true, x, z, width, depth };
+        scene.add(building);
+        buildings.push(building);
+
+        const roof = new THREE.Mesh(
+          new THREE.BoxGeometry(width * 0.45, 0.7, depth * 0.45),
+          new THREE.MeshStandardMaterial({ color: 0x41494b })
+        );
+        roof.position.set(x, height + 0.35, z);
+        roof.castShadow = true;
+        scene.add(roof);
+        building.userData.roof = roof;
+      }
     }
-  }
 
-  function loop() {
-    update(); draw(); requestAnimationFrame(loop);
-  }
-  loop();
-})();
-</script>
+    // Build a simple original mech from 3D shapes.
+    const mech = new THREE.Group();
+    scene.add(mech);
+
+    function part(parent, size, color, position) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(...size),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.18 })
+      );
+      mesh.position.set(...position);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      parent.add(mesh);
+      return mesh;
+    }
+
+    part(mech, [1.8, 1.7, 1.2], 0xe85d3f, [0, 2.0, 0]); // torso
+    part(mech, [1.25, 0.8, 1.0], 0xf2c14e, [0, 3.25, 0]); // head
+    part(mech, [0.9, 0.18, 0.12], 0x14242b, [0, 3.3, -0.52]); // visor
+    part(mech, [0.55, 1.45, 0.65], 0xb6c7c9, [-1.3, 2.05, 0]); // arm
+    part(mech, [0.55, 1.45, 0.65], 0xb6c7c9, [1.3, 2.05, 0]); // arm
+    part(mech, [0.65, 1.35, 0.75], 0x344956, [-0.48, 0.85, 0]); // leg
+    part(mech, [0.65, 1.35, 0.75], 0x344956, [0.48, 0.85, 0]); // leg
+
+    const keys = new Set();
+    const held = new Set();
+    let smashed = 0;
+    let message = "";
+    let messageUntil = 0;
+
+    addEventListener("keydown", event => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
+        event.preventDefault();
+      }
+      keys.add(event.key.toLowerCase());
+      if (event.key === " ") smash();
+    });
+    addEventListener("keyup", event => keys.delete(event.key.toLowerCase()));
+
+    document.querySelectorAll("[data-dir]").forEach(button => {
+      const dir = button.dataset.dir;
+      button.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        button.setPointerCapture(event.pointerId);
+        held.add(dir);
+      });
+      const release = () => held.delete(dir);
+      button.addEventListener("pointerup", release);
+      button.addEventListener("pointercancel", release);
+      button.addEventListener("lostpointercapture", release);
+    });
+    document.querySelector("#smash").addEventListener("pointerdown", event => {
+      event.preventDefault();
+      smash();
+    });
+
+    function smash() {
+      let target = null;
+      let nearest = 9;
+      for (const b of buildings) {
+        if (!b.userData.alive) continue;
+        const distance = Math.hypot(b.position.x - mech.position.x, b.position.z - mech.position.z);
+        if (distance < nearest) {
+          nearest = distance;
+          target = b;
+        }
+      }
+
+      if (target) {
+        target.userData.alive = false;
+        target.visible = false;
+        target.userData.roof.visible = false;
+
+        const rubble = new THREE.Mesh(
+          new THREE.BoxGeometry(target.userData.width, 0.45, target.userData.depth),
+          new THREE.MeshStandardMaterial({ color: 0x76685a, roughness: 1 })
+        );
+        rubble.position.set(target.userData.x, 0.22, target.userData.z);
+        rubble.receiveShadow = true;
+        scene.add(rubble);
+
+        smashed++;
+        document.querySelector("#score").textContent = `Buildings smashed: ${smashed}`;
+        message = "CRUNCH!";
+      } else {
+        message = "Get closer to a building!";
+      }
+      messageUntil = performance.now() + 900;
+    }
+
+    function pressed(dir, ...names) {
+      return held.has(dir) || names.some(name => keys.has(name));
+    }
+
+    function update() {
+      let dx = 0, dz = 0;
+      if (pressed("left", "a", "arrowleft")) dx--;
+      if (pressed("right", "d", "arrowright")) dx++;
+      if (pressed("up", "w", "arrowup")) dz--;
+      if (pressed("down", "s", "arrowdown")) dz++;
+      if (dx && dz) { dx *= Math.SQRT1_2; dz *= Math.SQRT1_2; }
+
+      const speed = 0.16;
+      const nextX = THREE.MathUtils.clamp(mech.position.x + dx * speed, -58, 58);
+      const nextZ = THREE.MathUtils.clamp(mech.position.z + dz * speed, -58, 58);
+
+      // Keep the mech from walking through standing buildings.
+      function blocked(x, z) {
+        return buildings.some(b => {
+          if (!b.userData.alive) return false;
+          return Math.abs(x - b.position.x) < b.userData.width / 2 + 1.2 &&
+                 Math.abs(z - b.position.z) < b.userData.depth / 2 + 1.2;
+        });
+      }
+      if (!blocked(nextX, mech.position.z)) mech.position.x = nextX;
+      if (!blocked(mech.position.x, nextZ)) mech.position.z = nextZ;
+
+      if (dx || dz) mech.rotation.y = Math.atan2(dx, dz) + Math.PI;
+
+      const targetCamera = new THREE.Vector3(
+        mech.position.x,
+        13,
+        mech.position.z + 18
+      );
+      camera.position.lerp(targetCamera, 0.08);
+      camera.lookAt(mech.position.x, 1.2, mech.position.z);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      update();
+
+      if (performance.now() < messageUntil) {
+        document.title = `${message} — Mech City 3D`;
+      } else {
+        document.title = "Mech City 3D";
+      }
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    addEventListener("resize", () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    });
+  </script>
 </body>
 </html>
